@@ -1,0 +1,31 @@
+env_files = [
+  { path = ".development.env", profile = "development" }
+]
+
+[tasks.format]
+install_create = "rustfmt"
+command = "cargo"
+args = ["fmt"]
+
+[tasks.check]
+command = "cargo"
+args = ["check"]
+
+[tasks.clippy]
+install_create = "clippy"
+command = "cargo"
+args = ["clippy", "--all-targets", "--all-features", "--", "-W", "clippy::pedantic", "-D", "warnings"]
+
+[tasks.build]
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.all]
+dependencies = [
+    "format",
+    "clippy",
+    "build",
+    "test",
+    "coverage-flow",
+    "codecov-flow"
+]
