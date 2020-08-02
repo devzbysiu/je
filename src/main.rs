@@ -31,7 +31,7 @@ fn main() -> Result<()> {
 fn get<S: Into<String>>(path: S) -> Result<()> {
     // mkdir -p "$tmpDir/jcr_root$filterDirname"
     let path = path.into();
-    mk_jcr_root_dir(&path)?;
+    mk_jcr_root_dir()?;
     copy_files()?;
     build_pkg()?;
     upload_pkg()?;
@@ -41,13 +41,10 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
     Ok(())
 }
 
-fn mk_jcr_root_dir(path: &str) -> Result<()> {
-    let parts: Vec<&str> = path.split("jcr_root/").collect();
-    assert_eq!(parts.len(), 2);
-    let path = parts[1];
+fn mk_jcr_root_dir() -> Result<()> {
     let tmp_dir = env::temp_dir();
     let tmp_dir_path = tmp_dir.as_path().to_str().unwrap_or("/tmp");
-    let path = format!("{}/je/jcr_root/{}", tmp_dir_path, path);
+    let path = format!("{}/je/jcr_root", tmp_dir_path);
     create_dir_all(path)?;
     Ok(())
 }
@@ -80,7 +77,7 @@ mod test {
 
     #[test]
     fn test_mk_jcr_root_dir() -> Result<()> {
-        mk_jcr_root_dir("/home/zbychu/test/jcr_root/some/dir")?;
+        mk_jcr_root_dir()?;
         assert_eq!(Path::new("/tmp/je/jcr_root").exists(), true);
         Ok(())
     }
