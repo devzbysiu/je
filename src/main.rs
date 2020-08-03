@@ -1,6 +1,5 @@
 use anyhow::Result;
 use log::debug;
-use std::env;
 use std::fs::create_dir_all;
 use std::fs::File;
 use std::io::prelude::*;
@@ -33,7 +32,7 @@ fn main() -> Result<()> {
 fn get<S: Into<String>>(path: S) -> Result<()> {
     // mkdir -p "$tmpDir/jcr_root$filterDirname"
     let path = path.into();
-    mk_jcr_root_dir(&path)?;
+    mk_pkg_dir(&path)?;
     build_pkg()?;
     upload_pkg()?;
     install_pkg()?;
@@ -46,11 +45,9 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
 }
 
 #[must_use]
-fn mk_jcr_root_dir(path: &str) -> Result<TempDir> {
+fn mk_pkg_dir(path: &str) -> Result<TempDir> {
     let tmp_dir_new = TempDir::new()?;
-    let jcr_root_path_new = tmp_dir_new.path().join("jcr_root");
-    debug!("jcr_root path: {}", jcr_root_path_new.display());
-    create_dir_all(jcr_root_path_new)?;
+    mk_jcr_root_dir(&tmp_dir_new)?;
 
     let vault_path = tmp_dir_new.path().join("META-INF/vault");
     create_dir_all(&vault_path)?;
@@ -76,6 +73,12 @@ fn mk_jcr_root_dir(path: &str) -> Result<TempDir> {
         .as_bytes(),
     )?;
     Ok(tmp_dir_new)
+}
+
+fn mk_jcr_root_dir(tmp_dir: &TempDir) -> Result<()> {
+    let jcr_root_path = tmp_dir.path().join("jcr_root");
+    create_dir_all(jcr_root_path)?;
+    Ok(())
 }
 
 fn filter_content<S: Into<String>>(path: S) -> String {
@@ -121,13 +124,26 @@ fn cleanup_tmp() -> Result<()> {
 mod test {
     use super::filter_content;
     use super::mk_jcr_root_dir;
+    use super::mk_pkg_dir;
     use anyhow::Result;
     use std::fs::read_to_string;
     use std::path::Path;
+    use tempfile::TempDir;
 
     #[test]
     fn test_mk_jcr_root_dir() -> Result<()> {
-        let tmp_dir_path = mk_jcr_root_dir("/home/user/project/jcr_root/content/client")?;
+        let tmp_dir = TempDir::new()?;
+        mk_jcr_root_dir(&tmp_dir)?;
+        assert_eq!(
+            Path::new(&format!("{}/jcr_root", tmp_dir.path().display())).exists(),
+            true
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_mk_pkg_dir() -> Result<()> {
+        let tmp_dir_path = mk_pkg_dir("/home/user/project/jcr_root/content/client")?;
         assert_eq!(
             Path::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists(),
             true
