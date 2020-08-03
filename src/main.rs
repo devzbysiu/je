@@ -51,21 +51,7 @@ fn mk_pkg_dir(path: &str) -> Result<TempDir> {
     mk_jcr_root_dir(&tmp_dir)?;
     mk_vault_dir(&tmp_dir)?;
     write_filter_content(&tmp_dir, content_path(path))?;
-
-    let mut filter_file =
-        File::create(format!("{}/properties.xml", vault_path(&tmp_dir).display()))?;
-    filter_file.write_all(
-        format!(
-            r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
-<properties>
-    <entry key="name">$(to_xml $pkgName)</entry>
-    <entry key="version">$(to_xml $pkgVersion)</entry>
-    <entry key="group">$(to_xml $pkgGroup)</entry>
-</properties>"#
-        )
-        .as_bytes(),
-    )?;
+    write_properties_content(&tmp_dir)?;
     Ok(tmp_dir)
 }
 
@@ -107,6 +93,23 @@ fn filter_content<S: Into<String>>(path: S) -> String {
     )
 }
 
+fn write_properties_content(tmp_dir: &TempDir) -> Result<()> {
+    let mut prop_file = File::create(format!("{}/properties.xml", vault_path(&tmp_dir).display()))?;
+    prop_file.write_all(
+        format!(
+            r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="name">$(to_xml $pkgName)</entry>
+    <entry key="version">$(to_xml $pkgVersion)</entry>
+    <entry key="group">$(to_xml $pkgGroup)</entry>
+</properties>"#
+        )
+        .as_bytes(),
+    )?;
+    Ok(())
+}
+
 fn copy_files() -> Result<()> {
     Ok(())
 }
@@ -143,6 +146,7 @@ mod test {
     use super::mk_pkg_dir;
     use super::mk_vault_dir;
     use super::write_filter_content;
+    use super::write_properties_content;
     use anyhow::Result;
     use std::fs::create_dir_all;
     use std::fs::read_to_string;
@@ -222,6 +226,27 @@ mod test {
 
         // should panic
         content_path(path);
+    }
+
+    #[test]
+    fn test_write_properties_content() -> Result<()> {
+        // given
+        let tmp_dir = TempDir::new()?;
+        create_dir_all(&format!("{}/META-INF/vault", tmp_dir.path().display()))?;
+
+        // when
+        write_properties_content(&tmp_dir)?;
+
+        // then
+        assert_eq!(
+            Path::new(&format!(
+                "{}/META-INF/vault/properties.xml",
+                tmp_dir.path().display()
+            ))
+            .exists(),
+            true
+        );
+        Ok(())
     }
 
     #[test]
