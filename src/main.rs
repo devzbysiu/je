@@ -55,8 +55,7 @@ fn mk_pkg_dir(path: &str) -> Result<TempDir> {
     assert_eq!(parts.len(), 2);
     let content_path = parts[1];
 
-    let mut filter_file = File::create(format!("{}/filter.xml", vault_path(&tmp_dir).display()))?;
-    filter_file.write_all(filter_content(content_path).as_bytes())?;
+    write_filter_content(&tmp_dir, content_path)?;
 
     let mut filter_file =
         File::create(format!("{}/properties.xml", vault_path(&tmp_dir).display()))?;
@@ -87,6 +86,12 @@ fn mk_vault_dir(tmp_dir: &TempDir) -> Result<()> {
 
 fn vault_path(tmp_dir: &TempDir) -> PathBuf {
     tmp_dir.path().join("META-INF/vault")
+}
+
+fn write_filter_content<S: Into<String>>(tmp_dir: &TempDir, content_path: S) -> Result<()> {
+    let mut filter_file = File::create(format!("{}/filter.xml", vault_path(&tmp_dir).display()))?;
+    filter_file.write_all(filter_content(content_path).as_bytes())?;
+    Ok(())
 }
 
 fn filter_content<S: Into<String>>(path: S) -> String {
@@ -134,7 +139,9 @@ mod test {
     use super::mk_jcr_root_dir;
     use super::mk_pkg_dir;
     use super::mk_vault_dir;
+    use super::write_filter_content;
     use anyhow::Result;
+    use std::fs::create_dir_all;
     use std::fs::read_to_string;
     use std::path::Path;
     use tempfile::TempDir;
@@ -166,6 +173,27 @@ mod test {
         // then
         assert_eq!(
             Path::new(&format!("{}/META-INF/vault", tmp_dir.path().display())).exists(),
+            true
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_write_filter_content() -> Result<()> {
+        // given
+        let tmp_dir = TempDir::new()?;
+        create_dir_all(&format!("{}/META-INF/vault", tmp_dir.path().display()))?;
+
+        // when
+        write_filter_content(&tmp_dir, "/content/path")?;
+
+        // then
+        assert_eq!(
+            Path::new(&format!(
+                "{}/META-INF/vault/filter.xml",
+                tmp_dir.path().display()
+            ))
+            .exists(),
             true
         );
         Ok(())
