@@ -9,6 +9,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::path::PathBuf;
+use std::thread;
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 use structopt::StructOpt;
 use tempfile::TempDir;
@@ -74,7 +76,8 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
     zip_pkg(&tmp_dir)?;
     upload_pkg(&tmp_dir)?;
     build_pkg(&pkg)?;
-    download_pkg()?;
+    thread::sleep(Duration::from_millis(100));
+    download_pkg(&tmp_dir, &pkg)?;
     unzip_pkg()?;
     copy_files()?;
     Ok(())
@@ -206,7 +209,18 @@ fn build_pkg(pkg: &Pkg) -> Result<()> {
     Ok(())
 }
 
-fn download_pkg() -> Result<()> {
+fn download_pkg(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
+    let client = Client::new();
+    let resp = client
+        .get(&format!(
+            "http://localhost:4502/etc/packages/{}",
+            pkg.path(),
+        ))
+        .header("Authorization", format!("Basic {}", encode("admin:admin")))
+        .send()?;
+    debug!("download pkg response: {:#?}", resp);
+    let mut pkg_file = File::create(tmp_dir.path().join("res.zip"))?;
+    pkg_file.write_all(&resp.bytes()?)?;
     Ok(())
 }
 
