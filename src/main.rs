@@ -161,10 +161,10 @@ fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
     let mut zip = ZipWriter::new(writer);
     let options = FileOptions::default();
 
-    for path in vec!["./jcr_root", "./META-INF"].iter() {
+    for path in &["./jcr_root", "./META-INF"] {
         let walkdir = WalkDir::new(path);
         let mut buffer = Vec::new();
-        for entry in &mut walkdir.into_iter().flat_map(|e| e.ok()) {
+        for entry in &mut walkdir.into_iter().flat_map(Result::ok) {
             let path = entry.path();
             if path.is_file() {
                 zip.start_file_from_path(path, options)?;
