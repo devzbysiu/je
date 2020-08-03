@@ -3,6 +3,7 @@ use log::debug;
 use std::fs::create_dir_all;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::PathBuf;
 use structopt::StructOpt;
 use tempfile::TempDir;
 
@@ -46,20 +47,19 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
 
 #[must_use]
 fn mk_pkg_dir(path: &str) -> Result<TempDir> {
-    let tmp_dir_new = TempDir::new()?;
-    mk_jcr_root_dir(&tmp_dir_new)?;
-
-    let vault_path = tmp_dir_new.path().join("META-INF/vault");
-    create_dir_all(&vault_path)?;
+    let tmp_dir = TempDir::new()?;
+    mk_jcr_root_dir(&tmp_dir)?;
+    mk_vault_dir(&tmp_dir)?;
 
     let parts: Vec<&str> = path.split("jcr_root").collect();
     assert_eq!(parts.len(), 2);
     let content_path = parts[1];
 
-    let mut filter_file = File::create(format!("{}/filter.xml", vault_path.display()))?;
+    let mut filter_file = File::create(format!("{}/filter.xml", vault_path(&tmp_dir).display()))?;
     filter_file.write_all(filter_content(content_path).as_bytes())?;
 
-    let mut filter_file = File::create(format!("{}/properties.xml", vault_path.display()))?;
+    let mut filter_file =
+        File::create(format!("{}/properties.xml", vault_path(&tmp_dir).display()))?;
     filter_file.write_all(
         format!(
             r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -72,13 +72,21 @@ fn mk_pkg_dir(path: &str) -> Result<TempDir> {
         )
         .as_bytes(),
     )?;
-    Ok(tmp_dir_new)
+    Ok(tmp_dir)
 }
 
 fn mk_jcr_root_dir(tmp_dir: &TempDir) -> Result<()> {
-    let jcr_root_path = tmp_dir.path().join("jcr_root");
-    create_dir_all(jcr_root_path)?;
+    create_dir_all(tmp_dir.path().join("jcr_root"))?;
     Ok(())
+}
+
+fn mk_vault_dir(tmp_dir: &TempDir) -> Result<()> {
+    create_dir_all(&vault_path(tmp_dir))?;
+    Ok(())
+}
+
+fn vault_path(tmp_dir: &TempDir) -> PathBuf {
+    tmp_dir.path().join("META-INF/vault")
 }
 
 fn filter_content<S: Into<String>>(path: S) -> String {
@@ -125,6 +133,7 @@ mod test {
     use super::filter_content;
     use super::mk_jcr_root_dir;
     use super::mk_pkg_dir;
+    use super::mk_vault_dir;
     use anyhow::Result;
     use std::fs::read_to_string;
     use std::path::Path;
@@ -132,10 +141,31 @@ mod test {
 
     #[test]
     fn test_mk_jcr_root_dir() -> Result<()> {
+        // given
         let tmp_dir = TempDir::new()?;
+
+        // when
         mk_jcr_root_dir(&tmp_dir)?;
+
+        // then
         assert_eq!(
             Path::new(&format!("{}/jcr_root", tmp_dir.path().display())).exists(),
+            true
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_mk_vault_dir() -> Result<()> {
+        // given
+        let tmp_dir = TempDir::new()?;
+
+        // when
+        mk_vault_dir(&tmp_dir)?;
+
+        // then
+        assert_eq!(
+            Path::new(&format!("{}/META-INF/vault", tmp_dir.path().display())).exists(),
             true
         );
         Ok(())
