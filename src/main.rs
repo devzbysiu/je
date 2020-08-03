@@ -5,6 +5,7 @@ use std::fs::create_dir_all;
 use std::fs::File;
 use std::io::prelude::*;
 use structopt::StructOpt;
+use tempfile::TempDir;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -44,23 +45,24 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
     Ok(())
 }
 
-fn mk_jcr_root_dir(path: &str) -> Result<()> {
-    let tmp_dir = env::temp_dir();
-    let tmp_dir_path = tmp_dir.as_path().to_str().unwrap_or("/tmp");
-    let jcr_root_path = format!("{}/je/jcr_root", tmp_dir_path);
-    create_dir_all(jcr_root_path)?;
+#[must_use]
+fn mk_jcr_root_dir(path: &str) -> Result<TempDir> {
+    let tmp_dir_new = TempDir::new()?;
+    let jcr_root_path_new = tmp_dir_new.path().join("jcr_root");
+    debug!("jcr_root path: {}", jcr_root_path_new.display());
+    create_dir_all(jcr_root_path_new)?;
 
-    let vault_path = format!("{}/je/META-INF/vault", tmp_dir_path);
+    let vault_path = tmp_dir_new.path().join("META-INF/vault");
     create_dir_all(&vault_path)?;
 
     let parts: Vec<&str> = path.split("jcr_root").collect();
     assert_eq!(parts.len(), 2);
     let content_path = parts[1];
 
-    let mut filter_file = File::create(format!("{}/filter.xml", vault_path))?;
+    let mut filter_file = File::create(format!("{}/filter.xml", vault_path.display()))?;
     filter_file.write_all(filter_content(content_path).as_bytes())?;
 
-    let mut filter_file = File::create(format!("{}/properties.xml", vault_path))?;
+    let mut filter_file = File::create(format!("{}/properties.xml", vault_path.display()))?;
     filter_file.write_all(
         format!(
             r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -73,7 +75,7 @@ fn mk_jcr_root_dir(path: &str) -> Result<()> {
         )
         .as_bytes(),
     )?;
-    Ok(())
+    Ok(tmp_dir_new)
 }
 
 fn filter_content<S: Into<String>>(path: S) -> String {
@@ -125,16 +127,30 @@ mod test {
 
     #[test]
     fn test_mk_jcr_root_dir() -> Result<()> {
-        mk_jcr_root_dir("/home/user/project/jcr_root/content/client")?;
-        assert_eq!(Path::new("/tmp/je/jcr_root").exists(), true);
+        let tmp_dir_path = mk_jcr_root_dir("/home/user/project/jcr_root/content/client")?;
         assert_eq!(
-            Path::new("/tmp/je/META-INF/vault/filter.xml").exists(),
+            Path::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists(),
             true
         );
-        let filter_contents = read_to_string("/tmp/je/META-INF/vault/filter.xml")?;
+        assert_eq!(
+            Path::new(&format!(
+                "{}/META-INF/vault/filter.xml",
+                tmp_dir_path.path().display()
+            ))
+            .exists(),
+            true
+        );
+        let filter_contents = read_to_string(format!(
+            "{}/META-INF/vault/filter.xml",
+            tmp_dir_path.path().display()
+        ))?;
         assert_eq!(filter_contents, filter_content("/content/client"));
         assert_eq!(
-            Path::new("/tmp/je/META-INF/vault/properties.xml").exists(),
+            Path::new(&format!(
+                "{}/META-INF/vault/properties.xml",
+                tmp_dir_path.path().display()
+            ))
+            .exists(),
             true
         );
 
