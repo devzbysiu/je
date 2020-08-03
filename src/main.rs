@@ -43,8 +43,6 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
     download_pkg()?;
     unzip_pkg()?;
     copy_files()?;
-    cleanup_tmp()?;
-    debug!("downloading path {}", path);
     Ok(())
 }
 
@@ -147,10 +145,6 @@ fn download_pkg() -> Result<()> {
 }
 
 fn unzip_pkg() -> Result<()> {
-    Ok(())
-}
-
-fn cleanup_tmp() -> Result<()> {
     Ok(())
 }
 
