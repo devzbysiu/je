@@ -1,5 +1,8 @@
 use anyhow::Result;
+use base64::encode;
 use log::debug;
+use reqwest::blocking::multipart;
+use reqwest::blocking::Client;
 use std::env;
 use std::fs::create_dir_all;
 use std::fs::File;
@@ -38,7 +41,7 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
     let path = path.into();
     let tmp_dir = mk_pkg_dir(&path)?;
     zip_pkg(&tmp_dir)?;
-    upload_pkg()?;
+    upload_pkg(&tmp_dir)?;
     install_pkg()?;
     download_pkg()?;
     unzip_pkg()?;
@@ -132,7 +135,15 @@ fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
     Ok(())
 }
 
-fn upload_pkg() -> Result<()> {
+fn upload_pkg(tmp_dir: &TempDir) -> Result<()> {
+    let form = multipart::Form::new().file("package", tmp_dir.path().join("pkg.zip"))?;
+    let client = Client::new();
+    let resp = client
+        .post("http://localhost:4502/crx/packmgr/service/.json?cmd=upload")
+        .header("Authorization", format!("Basic {}", encode("admin:admin")))
+        .multipart(form)
+        .send()?;
+    debug!("resp: {:#?}", resp);
     Ok(())
 }
 
