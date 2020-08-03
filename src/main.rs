@@ -50,12 +50,7 @@ fn mk_pkg_dir(path: &str) -> Result<TempDir> {
     let tmp_dir = TempDir::new()?;
     mk_jcr_root_dir(&tmp_dir)?;
     mk_vault_dir(&tmp_dir)?;
-
-    let parts: Vec<&str> = path.split("jcr_root").collect();
-    assert_eq!(parts.len(), 2);
-    let content_path = parts[1];
-
-    write_filter_content(&tmp_dir, content_path)?;
+    write_filter_content(&tmp_dir, content_path(path))?;
 
     let mut filter_file =
         File::create(format!("{}/properties.xml", vault_path(&tmp_dir).display()))?;
@@ -86,6 +81,13 @@ fn mk_vault_dir(tmp_dir: &TempDir) -> Result<()> {
 
 fn vault_path(tmp_dir: &TempDir) -> PathBuf {
     tmp_dir.path().join("META-INF/vault")
+}
+
+fn content_path<S: Into<String>>(path: S) -> String {
+    let path = path.into();
+    let parts: Vec<&str> = path.split("jcr_root").collect();
+    assert_eq!(parts.len(), 2);
+    parts[1].into()
 }
 
 fn write_filter_content<S: Into<String>>(tmp_dir: &TempDir, content_path: S) -> Result<()> {
@@ -135,6 +137,7 @@ fn cleanup_tmp() -> Result<()> {
 
 #[cfg(test)]
 mod test {
+    use super::content_path;
     use super::filter_content;
     use super::mk_jcr_root_dir;
     use super::mk_pkg_dir;
@@ -197,6 +200,28 @@ mod test {
             true
         );
         Ok(())
+    }
+
+    #[test]
+    fn test_content_path_with_correct_paths() {
+        // given
+        let path = "/home/zbychu/project/test/jcr_root/content/abc";
+
+        // when
+        let content_path = content_path(path);
+
+        // then
+        assert_eq!(content_path, "/content/abc");
+    }
+
+    #[test]
+    #[should_panic()]
+    fn test_content_path_with_broken_paths() {
+        // given
+        let path = "/home/zbychu/project/test/content/abc";
+
+        // should panic
+        content_path(path);
     }
 
     #[test]
