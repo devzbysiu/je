@@ -98,9 +98,9 @@ fn write_properties_content(tmp_dir: &TempDir) -> Result<()> {
         r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
-    <entry key="name">$(to_xml $pkgName)</entry>
-    <entry key="version">$(to_xml $pkgVersion)</entry>
-    <entry key="group">$(to_xml $pkgGroup)</entry>
+    <entry key="name">je-package</entry>
+    <entry key="version">1.0.0</entry>
+    <entry key="group">je</entry>
 </properties>"#
             .as_bytes(),
     )?;
@@ -138,7 +138,6 @@ fn cleanup_tmp() -> Result<()> {
 #[cfg(test)]
 mod test {
     use super::content_path;
-    use super::filter_content;
     use super::mk_jcr_root_dir;
     use super::mk_pkg_dir;
     use super::mk_vault_dir;
@@ -200,6 +199,18 @@ mod test {
             .exists(),
             true
         );
+        let filter_contents = read_to_string(format!(
+            "{}/META-INF/vault/filter.xml",
+            tmp_dir.path().display()
+        ))?;
+        assert_eq!(
+            filter_contents,
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/content/path"/>
+</workspaceFilter>
+        "#,
+        );
         Ok(())
     }
 
@@ -243,12 +254,32 @@ mod test {
             .exists(),
             true
         );
+        let properties_contents = read_to_string(format!(
+            "{}/META-INF/vault/properties.xml",
+            tmp_dir.path().display()
+        ))?;
+        assert_eq!(
+            properties_contents,
+            r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="name">je-package</entry>
+    <entry key="version">1.0.0</entry>
+    <entry key="group">je</entry>
+</properties>"#,
+        );
         Ok(())
     }
 
     #[test]
     fn test_mk_pkg_dir() -> Result<()> {
-        let tmp_dir_path = mk_pkg_dir("/home/user/project/jcr_root/content/client")?;
+        // given
+        let file_path = "/home/user/project/jcr_root/content/client";
+
+        // when
+        let tmp_dir_path = mk_pkg_dir(file_path)?;
+
+        // then
         assert_eq!(
             Path::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists(),
             true
@@ -265,7 +296,14 @@ mod test {
             "{}/META-INF/vault/filter.xml",
             tmp_dir_path.path().display()
         ))?;
-        assert_eq!(filter_contents, filter_content("/content/client"));
+        assert_eq!(
+            filter_contents,
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/content/client"/>
+</workspaceFilter>
+        "#,
+        );
         assert_eq!(
             Path::new(&format!(
                 "{}/META-INF/vault/properties.xml",
