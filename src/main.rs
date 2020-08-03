@@ -1,11 +1,15 @@
 use anyhow::Result;
 use log::debug;
+use std::env;
 use std::fs::create_dir_all;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::Path;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use tempfile::TempDir;
+use zip::write::FileOptions;
+use zip::ZipWriter;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -32,8 +36,8 @@ fn main() -> Result<()> {
 
 fn get<S: Into<String>>(path: S) -> Result<()> {
     let path = path.into();
-    mk_pkg_dir(&path)?;
-    build_pkg()?;
+    let tmp_dir = mk_pkg_dir(&path)?;
+    zip_pkg(&tmp_dir)?;
     upload_pkg()?;
     install_pkg()?;
     download_pkg()?;
@@ -110,7 +114,23 @@ fn copy_files() -> Result<()> {
     Ok(())
 }
 
-fn build_pkg() -> Result<()> {
+fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
+    let initial_dir = env::current_dir()?;
+
+    env::set_current_dir(tmp_dir)?;
+
+    let writer = File::create(tmp_dir.path().join("pkg.zip"))?;
+    let mut zip = ZipWriter::new(writer);
+    let options = FileOptions::default();
+
+    vec!["./jcr_root", "./META-INF"].iter().for_each(|path| {
+        zip.add_directory_from_path(Path::new(path), options)
+            .expect(&format!("failed to add {} to zip", path))
+    });
+
+    zip.finish()?;
+
+    env::set_current_dir(initial_dir)?;
     Ok(())
 }
 
@@ -136,12 +156,7 @@ fn cleanup_tmp() -> Result<()> {
 
 #[cfg(test)]
 mod test {
-    use super::content_path;
-    use super::mk_jcr_root_dir;
-    use super::mk_pkg_dir;
-    use super::mk_vault_dir;
-    use super::write_filter_content;
-    use super::write_properties_content;
+    use super::*;
     use anyhow::Result;
     use std::fs::create_dir_all;
     use std::fs::read_to_string;
@@ -312,6 +327,19 @@ mod test {
             true
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_zip_pkg() -> Result<()> {
+        // given
+        let tmp_dir = TempDir::new()?;
+
+        // when
+        zip_pkg(&tmp_dir)?;
+
+        // then
+        assert_eq!(Path::new(&tmp_dir.path().join("pkg.zip")).exists(), true);
         Ok(())
     }
 }
