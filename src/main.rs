@@ -45,7 +45,6 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
     Ok(())
 }
 
-#[must_use]
 fn mk_pkg_dir(path: &str) -> Result<TempDir> {
     let tmp_dir = TempDir::new()?;
     mk_jcr_root_dir(&tmp_dir)?;
@@ -96,16 +95,14 @@ fn filter_content<S: Into<String>>(path: S) -> String {
 fn write_properties_content(tmp_dir: &TempDir) -> Result<()> {
     let mut prop_file = File::create(format!("{}/properties.xml", vault_path(&tmp_dir).display()))?;
     prop_file.write_all(
-        format!(
-            r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
     <entry key="name">$(to_xml $pkgName)</entry>
     <entry key="version">$(to_xml $pkgVersion)</entry>
     <entry key="group">$(to_xml $pkgGroup)</entry>
 </properties>"#
-        )
-        .as_bytes(),
+            .as_bytes(),
     )?;
     Ok(())
 }
@@ -219,7 +216,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic()]
+    #[should_panic]
     fn test_content_path_with_broken_paths() {
         // given
         let path = "/home/zbychu/project/test/content/abc";
