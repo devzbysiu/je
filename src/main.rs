@@ -9,8 +9,10 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 use structopt::StructOpt;
 use tempfile::TempDir;
+use walkdir::WalkDir;
 use zip::write::FileOptions;
 use zip::ZipWriter;
 
@@ -27,6 +29,33 @@ enum Opt {
     },
 }
 
+#[derive(Debug)]
+struct Pkg {
+    name: String,
+    version: String,
+    group: String,
+}
+
+impl Pkg {
+    fn path(&self) -> String {
+        format!("{}/{}-{}.zip", self.group, self.name, self.version)
+    }
+}
+
+impl Default for Pkg {
+    fn default() -> Self {
+        Self {
+            name: "je-pkg".into(),
+            version: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("failed to count secs from EPOCH")
+                .as_secs()
+                .to_string(),
+            group: "je".into(),
+        }
+    }
+}
+
 fn main() -> Result<()> {
     pretty_env_logger::init();
     let opt = Opt::from_args();
@@ -39,22 +68,24 @@ fn main() -> Result<()> {
 
 fn get<S: Into<String>>(path: S) -> Result<()> {
     let path = path.into();
-    let tmp_dir = mk_pkg_dir(&path)?;
+    let pkg = Pkg::default();
+
+    let tmp_dir = mk_pkg_dir(&path, &pkg)?;
     zip_pkg(&tmp_dir)?;
     upload_pkg(&tmp_dir)?;
-    install_pkg()?;
+    build_pkg(&pkg)?;
     download_pkg()?;
     unzip_pkg()?;
     copy_files()?;
     Ok(())
 }
 
-fn mk_pkg_dir(path: &str) -> Result<TempDir> {
+fn mk_pkg_dir(path: &str, pkg: &Pkg) -> Result<TempDir> {
     let tmp_dir = TempDir::new()?;
     mk_jcr_root_dir(&tmp_dir)?;
     mk_vault_dir(&tmp_dir)?;
     write_filter_content(&tmp_dir, content_path(path))?;
-    write_properties_content(&tmp_dir)?;
+    write_properties_content(&tmp_dir, pkg)?;
     Ok(tmp_dir)
 }
 
@@ -96,17 +127,20 @@ fn filter_content<S: Into<String>>(path: S) -> String {
     )
 }
 
-fn write_properties_content(tmp_dir: &TempDir) -> Result<()> {
+fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
     let mut prop_file = File::create(format!("{}/properties.xml", vault_path(&tmp_dir).display()))?;
     prop_file.write_all(
-        r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        format!(
+            r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
-    <entry key="name">je-package</entry>
-    <entry key="version">1.0.0</entry>
-    <entry key="group">je</entry>
-</properties>"#
-            .as_bytes(),
+    <entry key="name">{}</entry>
+    <entry key="version">{}</entry>
+    <entry key="group">{}</entry>
+</properties>"#,
+            pkg.name, pkg.version, pkg.group
+        )
+        .as_bytes(),
     )?;
     Ok(())
 }
@@ -124,10 +158,22 @@ fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
     let mut zip = ZipWriter::new(writer);
     let options = FileOptions::default();
 
-    vec!["./jcr_root", "./META-INF"].iter().for_each(|path| {
-        zip.add_directory_from_path(Path::new(path), options)
-            .expect(&format!("failed to add {} to zip", path))
-    });
+    for path in vec!["./jcr_root", "./META-INF"].iter() {
+        let walkdir = WalkDir::new(path);
+        let mut buffer = Vec::new();
+        for entry in &mut walkdir.into_iter().flat_map(|e| e.ok()) {
+            let path = entry.path();
+            if path.is_file() {
+                zip.start_file_from_path(path, options)?;
+                let mut f = File::open(path)?;
+                f.read_to_end(&mut buffer)?;
+                zip.write_all(&*buffer)?;
+                buffer.clear();
+            } else {
+                zip.add_directory_from_path(Path::new(path), options)?;
+            }
+        }
+    }
 
     zip.finish()?;
 
@@ -147,7 +193,16 @@ fn upload_pkg(tmp_dir: &TempDir) -> Result<()> {
     Ok(())
 }
 
-fn install_pkg() -> Result<()> {
+fn build_pkg(pkg: &Pkg) -> Result<()> {
+    let client = Client::new();
+    let resp = client
+        .post(&format!(
+            "http://localhost:4502/crx/packmgr/service/script.html/etc/packages/{}?cmd=build",
+            pkg.path(),
+        ))
+        .header("Authorization", format!("Basic {}", encode("admin:admin")))
+        .send()?;
+    debug!("build pkg response: {:#?}", resp);
     Ok(())
 }
 
@@ -260,9 +315,10 @@ mod test {
         // given
         let tmp_dir = TempDir::new()?;
         create_dir_all(&format!("{}/META-INF/vault", tmp_dir.path().display()))?;
+        let pkg = Pkg::default();
 
         // when
-        write_properties_content(&tmp_dir)?;
+        write_properties_content(&tmp_dir, &pkg)?;
 
         // then
         assert_eq!(
@@ -279,13 +335,16 @@ mod test {
         ))?;
         assert_eq!(
             properties_contents,
-            r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+            format!(
+                r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
-    <entry key="name">je-package</entry>
-    <entry key="version">1.0.0</entry>
-    <entry key="group">je</entry>
+    <entry key="name">{}</entry>
+    <entry key="version">{}</entry>
+    <entry key="group">{}</entry>
 </properties>"#,
+                pkg.name, pkg.version, pkg.group
+            ),
         );
         Ok(())
     }
@@ -294,9 +353,10 @@ mod test {
     fn test_mk_pkg_dir() -> Result<()> {
         // given
         let file_path = "/home/user/project/jcr_root/content/client";
+        let pkg = Pkg::default();
 
         // when
-        let tmp_dir_path = mk_pkg_dir(file_path)?;
+        let tmp_dir_path = mk_pkg_dir(file_path, &pkg)?;
 
         // then
         assert_eq!(
