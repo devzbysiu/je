@@ -31,7 +31,6 @@ fn main() -> Result<()> {
 }
 
 fn get<S: Into<String>>(path: S) -> Result<()> {
-    // mkdir -p "$tmpDir/jcr_root$filterDirname"
     let path = path.into();
     mk_pkg_dir(&path)?;
     build_pkg()?;
