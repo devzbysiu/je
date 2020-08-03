@@ -53,23 +53,38 @@ fn mk_jcr_root_dir(path: &str) -> Result<()> {
     let vault_path = format!("{}/je/META-INF/vault", tmp_dir_path);
     create_dir_all(&vault_path)?;
 
-    let parts: Vec<&str> = path.split("jcr_root/").collect();
+    let parts: Vec<&str> = path.split("jcr_root").collect();
     assert_eq!(parts.len(), 2);
     let content_path = parts[1];
 
     let mut filter_file = File::create(format!("{}/filter.xml", vault_path))?;
+    filter_file.write_all(filter_content(content_path).as_bytes())?;
+
+    let mut filter_file = File::create(format!("{}/properties.xml", vault_path))?;
     filter_file.write_all(
         format!(
-            r#"<?xml version="1.0" encoding="UTF-8"?>
-<workspaceFilter version="1.0">
-    <filter root="/{}"/>
-</workspaceFilter>
-        "#,
-            content_path
+            r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="name">$(to_xml $pkgName)</entry>
+    <entry key="version">$(to_xml $pkgVersion)</entry>
+    <entry key="group">$(to_xml $pkgGroup)</entry>
+</properties>"#
         )
         .as_bytes(),
     )?;
     Ok(())
+}
+
+fn filter_content<S: Into<String>>(path: S) -> String {
+    format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="{}"/>
+</workspaceFilter>
+        "#,
+        path.into()
+    )
 }
 
 fn copy_files() -> Result<()> {
@@ -102,6 +117,7 @@ fn cleanup_tmp() -> Result<()> {
 
 #[cfg(test)]
 mod test {
+    use super::filter_content;
     use super::mk_jcr_root_dir;
     use anyhow::Result;
     use std::fs::read_to_string;
@@ -116,13 +132,10 @@ mod test {
             true
         );
         let filter_contents = read_to_string("/tmp/je/META-INF/vault/filter.xml")?;
+        assert_eq!(filter_contents, filter_content("/content/client"));
         assert_eq!(
-            filter_contents,
-            r#"<?xml version="1.0" encoding="UTF-8"?>
-<workspaceFilter version="1.0">
-    <filter root="/content/client"/>
-</workspaceFilter>
-        "#
+            Path::new("/tmp/je/META-INF/vault/properties.xml").exists(),
+            true
         );
 
         Ok(())
