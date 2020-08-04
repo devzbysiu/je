@@ -72,6 +72,7 @@ fn main() -> Result<()> {
 
 fn get<S: Into<String>>(path: S) -> Result<()> {
     let path = path.into();
+    debug!("executing 'get {}'", path);
     let pkg = Pkg::default();
 
     let tmp_dir = mk_pkg_dir(&path, &pkg)?;
@@ -88,6 +89,7 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
 }
 
 fn mk_pkg_dir(path: &str, pkg: &Pkg) -> Result<TempDir> {
+    debug!("creating pkg dir");
     let tmp_dir = TempDir::new()?;
     mk_jcr_root_dir(&tmp_dir)?;
     mk_vault_dir(&tmp_dir)?;
@@ -97,11 +99,14 @@ fn mk_pkg_dir(path: &str, pkg: &Pkg) -> Result<TempDir> {
 }
 
 fn mk_jcr_root_dir(tmp_dir: &TempDir) -> Result<()> {
-    create_dir_all(tmp_dir.path().join("jcr_root"))?;
+    let jcr_root_dir_path = tmp_dir.path().join("jcr_root");
+    debug!("creating jcr_root dir: {}", jcr_root_dir_path.display());
+    create_dir_all(jcr_root_dir_path)?;
     Ok(())
 }
 
 fn mk_vault_dir(tmp_dir: &TempDir) -> Result<()> {
+    debug!("creating vault dir: {}", vault_path(tmp_dir).display());
     create_dir_all(&vault_path(tmp_dir))?;
     Ok(())
 }
@@ -118,8 +123,14 @@ fn content_path<S: Into<String>>(path: S) -> String {
 }
 
 fn write_filter_content<S: Into<String>>(tmp_dir: &TempDir, content_path: S) -> Result<()> {
-    let mut filter_file = File::create(format!("{}/filter.xml", vault_path(&tmp_dir).display()))?;
-    filter_file.write_all(filter_content(content_path).as_bytes())?;
+    let filter_path = format!("{}/filter.xml", vault_path(&tmp_dir).display());
+    let mut filter_file = File::create(&filter_path)?;
+    let filter_content = filter_content(content_path);
+    debug!(
+        "writing content {} to filter {}",
+        filter_content, filter_path
+    );
+    filter_file.write_all(filter_content.as_bytes())?;
     Ok(())
 }
 
@@ -135,26 +146,38 @@ fn filter_content<S: Into<String>>(path: S) -> String {
 }
 
 fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
-    let mut prop_file = File::create(format!("{}/properties.xml", vault_path(&tmp_dir).display()))?;
-    prop_file.write_all(
-        format!(
-            r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    let prop_path = format!("{}/properties.xml", vault_path(&tmp_dir).display());
+    let mut prop_file = File::create(&prop_path)?;
+    let properties_content = properties_content(&pkg);
+    debug!(
+        "writing content {} to properties file {}",
+        &properties_content, prop_path
+    );
+    prop_file.write_all(properties_content.as_bytes())?;
+    Ok(())
+}
+
+fn properties_content(pkg: &Pkg) -> String {
+    format!(
+        r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
     <entry key="name">{}</entry>
     <entry key="version">{}</entry>
     <entry key="group">{}</entry>
 </properties>"#,
-            pkg.name, pkg.version, pkg.group
-        )
-        .as_bytes(),
-    )?;
-    Ok(())
+        pkg.name, pkg.version, pkg.group
+    )
 }
 
 fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
     let initial_dir = env::current_dir()?;
 
+    debug!(
+        "switching dir from {} to {}",
+        &initial_dir.display(),
+        &tmp_dir.path().display()
+    );
     env::set_current_dir(tmp_dir)?;
 
     let writer = File::create(tmp_dir.path().join("pkg.zip"))?;
@@ -164,15 +187,18 @@ fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
     for path in vec!["./jcr_root", "./META-INF"].iter() {
         let walkdir = WalkDir::new(path);
         let mut buffer = Vec::new();
+        debug!("zipping {}", path);
         for entry in &mut walkdir.into_iter().flat_map(|e| e.ok()) {
             let path = entry.path();
             if path.is_file() {
+                debug!("{} is a file", path.display());
                 zip.start_file_from_path(path, options)?;
                 let mut f = File::open(path)?;
                 f.read_to_end(&mut buffer)?;
                 zip.write_all(&*buffer)?;
                 buffer.clear();
             } else {
+                debug!("{} is a dir", path.display());
                 zip.add_directory_from_path(Path::new(path), options)?;
             }
         }
@@ -180,6 +206,7 @@ fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
 
     zip.finish()?;
 
+    debug!("switching back to {}", &initial_dir.display());
     env::set_current_dir(initial_dir)?;
     Ok(())
 }
@@ -192,7 +219,7 @@ fn upload_pkg(tmp_dir: &TempDir) -> Result<()> {
         .header("Authorization", format!("Basic {}", encode("admin:admin")))
         .multipart(form)
         .send()?;
-    debug!("resp: {:#?}", resp);
+    debug!("upload pkg response: {:#?}", resp);
     Ok(())
 }
 
@@ -225,18 +252,21 @@ fn download_pkg(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
 }
 
 fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
-    let mut archive = ZipArchive::new(File::open(tmp_dir.path().join("res.zip"))?)?;
+    let res_zip_path = tmp_dir.path().join("res.zip");
+    debug!("unzipping {}", res_zip_path.display());
+    let mut archive = ZipArchive::new(File::open(res_zip_path)?)?;
 
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
         let outpath = file.sanitized_name();
 
         let outpath = tmp_dir.path().join(outpath);
-        debug!("extracting {:#?}", outpath);
 
         if file.is_dir() {
+            debug!("extracting dir {}", outpath.display());
             create_dir_all(&outpath)?;
         } else {
+            debug!("extracting file {}", outpath.display());
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
                     create_dir_all(&p)?;
