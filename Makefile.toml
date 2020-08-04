@@ -31,4 +31,4 @@ dependencies = [
 ]
 
 [env]
-RUST_TEST_THREAD = 1
+RUST_TEST_THREADS = 1
