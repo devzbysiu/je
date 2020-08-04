@@ -3,9 +3,9 @@ use base64::encode;
 use log::debug;
 use reqwest::blocking::multipart;
 use reqwest::blocking::Client;
+use serde_derive::{Deserialize, Serialize};
 use std::env;
-use std::fs::File;
-use std::fs::{create_dir_all, remove_dir_all};
+use std::fs::{create_dir_all, read_to_string, remove_dir_all, File};
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
@@ -31,6 +31,7 @@ enum Opt {
         /// path to download
         path: String,
     },
+    Init,
 }
 
 #[derive(Debug)]
@@ -60,30 +61,64 @@ impl Default for Pkg {
     }
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct Cfg {
+    ignore_properties: Vec<String>,
+    instance: Instance,
+}
+
+impl Cfg {
+    fn load() -> Result<Cfg> {
+        debug!("loading config from .je");
+        Ok(toml::from_str(&read_to_string(".je")?)?)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Instance {
+    addr: String,
+    user: String,
+    pass: String,
+}
+
+impl Default for Instance {
+    fn default() -> Self {
+        Self {
+            addr: "http://localhost:4502".into(),
+            user: "admin".into(),
+            pass: "admin".into(),
+        }
+    }
+}
+
 fn main() -> Result<()> {
     pretty_env_logger::init();
     let opt = Opt::from_args();
     debug!("parsed opts: {:#?}", opt);
+    let cfg = Cfg::load()?;
+    debug!("read config: {:#?}", cfg);
     match opt {
-        Opt::Get { path } => get(path)?,
+        Opt::Get { path } => get(&cfg, path)?,
+        Opt::Init => init()?,
     }
     Ok(())
 }
 
-fn get<S: Into<String>>(path: S) -> Result<()> {
+fn get<S: Into<String>>(cfg: &Cfg, path: S) -> Result<()> {
     let path = path.into();
     debug!("executing 'get {}'", path);
     let pkg = Pkg::default();
 
     let tmp_dir = mk_pkg_dir(&path, &pkg)?;
     zip_pkg(&tmp_dir)?;
-    upload_pkg(&tmp_dir)?;
-    build_pkg(&pkg)?;
+    upload_pkg(&cfg, &tmp_dir)?;
+    build_pkg(&cfg, &pkg)?;
     thread::sleep(Duration::from_millis(100));
     remove_dir_all(&tmp_dir)?;
     create_dir_all(&tmp_dir)?;
     download_pkg(&tmp_dir, &pkg)?;
     unzip_pkg(&tmp_dir)?;
+    cleanup_files(&tmp_dir)?;
     copy_files()?;
     Ok(())
 }
@@ -211,26 +246,42 @@ fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
     Ok(())
 }
 
-fn upload_pkg(tmp_dir: &TempDir) -> Result<()> {
+fn upload_pkg(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
     let form = multipart::Form::new().file("package", tmp_dir.path().join("pkg.zip"))?;
     let client = Client::new();
     let resp = client
-        .post("http://localhost:4502/crx/packmgr/service/.json?cmd=upload")
-        .header("Authorization", format!("Basic {}", encode("admin:admin")))
+        .post(&format!(
+            "{}/crx/packmgr/service/.json?cmd=upload",
+            cfg.instance.addr
+        ))
+        .header(
+            "Authorization",
+            format!(
+                "Basic {}",
+                encode(format!("{}:{}", cfg.instance.user, cfg.instance.pass))
+            ),
+        )
         .multipart(form)
         .send()?;
     debug!("upload pkg response: {:#?}", resp);
     Ok(())
 }
 
-fn build_pkg(pkg: &Pkg) -> Result<()> {
+fn build_pkg(cfg: &Cfg, pkg: &Pkg) -> Result<()> {
     let client = Client::new();
     let resp = client
         .post(&format!(
-            "http://localhost:4502/crx/packmgr/service/script.html/etc/packages/{}?cmd=build",
+            "{}/crx/packmgr/service/script.html/etc/packages/{}?cmd=build",
+            cfg.instance.addr,
             pkg.path(),
         ))
-        .header("Authorization", format!("Basic {}", encode("admin:admin")))
+        .header(
+            "Authorization",
+            format!(
+                "Basic {}",
+                encode(format!("{}:{}", cfg.instance.user, cfg.instance.pass))
+            ),
+        )
         .send()?;
     debug!("build pkg response: {:#?}", resp);
     Ok(())
@@ -280,7 +331,19 @@ fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
     Ok(())
 }
 
+fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
+    Ok(())
+}
+
 fn copy_files() -> Result<()> {
+    Ok(())
+}
+
+fn init() -> Result<()> {
+    debug!("initializing config file ./.je");
+    let cfg = Cfg::default();
+    let mut file = File::create(".je")?;
+    file.write_all(toml::to_string(&cfg)?.as_bytes())?;
     Ok(())
 }
 

@@ -29,3 +29,6 @@ zip = "0.5.6"
 reqwest = { version = "0.10.7", features = [ "blocking" ] }
 base64 = "0.12.3"
 walkdir = "2.3.1"
+toml = "0.5.6"
+serde = "1.0.114"
+serde_derive = "1.0.114"
