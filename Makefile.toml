@@ -29,3 +29,6 @@ dependencies = [
     "coverage-flow",
     "codecov-flow"
 ]
+
+[env]
+RUST_TEST_THREAD = 1
