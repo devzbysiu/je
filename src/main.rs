@@ -4,8 +4,9 @@ use log::debug;
 use reqwest::blocking::multipart;
 use reqwest::blocking::Client;
 use std::env;
-use std::fs::create_dir_all;
 use std::fs::File;
+use std::fs::{create_dir_all, remove_dir_all};
+use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 use std::path::PathBuf;
@@ -16,6 +17,7 @@ use structopt::StructOpt;
 use tempfile::TempDir;
 use walkdir::WalkDir;
 use zip::write::FileOptions;
+use zip::ZipArchive;
 use zip::ZipWriter;
 
 #[derive(Debug, StructOpt)]
@@ -77,8 +79,10 @@ fn get<S: Into<String>>(path: S) -> Result<()> {
     upload_pkg(&tmp_dir)?;
     build_pkg(&pkg)?;
     thread::sleep(Duration::from_millis(100));
+    remove_dir_all(&tmp_dir)?;
+    create_dir_all(&tmp_dir)?;
     download_pkg(&tmp_dir, &pkg)?;
-    unzip_pkg()?;
+    unzip_pkg(&tmp_dir)?;
     copy_files()?;
     Ok(())
 }
@@ -145,10 +149,6 @@ fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
         )
         .as_bytes(),
     )?;
-    Ok(())
-}
-
-fn copy_files() -> Result<()> {
     Ok(())
 }
 
@@ -224,7 +224,33 @@ fn download_pkg(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
     Ok(())
 }
 
-fn unzip_pkg() -> Result<()> {
+fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
+    let mut archive = ZipArchive::new(File::open(tmp_dir.path().join("res.zip"))?)?;
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let outpath = file.sanitized_name();
+
+        let outpath = tmp_dir.path().join(outpath);
+        debug!("extracting {:#?}", outpath);
+
+        if file.is_dir() {
+            create_dir_all(&outpath)?;
+        } else {
+            if let Some(p) = outpath.parent() {
+                if !p.exists() {
+                    create_dir_all(&p)?;
+                }
+            }
+            let mut outfile = File::create(&outpath)?;
+            io::copy(&mut file, &mut outfile)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn copy_files() -> Result<()> {
     Ok(())
 }
 
