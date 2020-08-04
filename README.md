@@ -3,7 +3,7 @@
   <h1><code>je</code></h1>
 
   <h3>
-    <strong>CHANGEME</strong>
+    <strong>Jcr Exchange</strong>
   </h3>
 
   <p>
@@ -37,7 +37,10 @@
 
 # <p id="about">About</p>
 
-## --- TODO ---
+Small utility for uploading/downloading content to/from running AEM instance.
+
+It's intended to be used as an external tool for IntelliJ Idea to allow to easily synchronize
+content.
 
 # <p id="installation">Installation</p>
 
