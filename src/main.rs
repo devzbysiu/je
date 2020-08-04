@@ -351,6 +351,7 @@ fn init() -> Result<()> {
 mod test {
     use super::*;
     use anyhow::Result;
+    use std::env;
     use std::fs::create_dir_all;
     use std::fs::read_to_string;
     use std::path::Path;
@@ -538,6 +539,32 @@ mod test {
 
         // then
         assert_eq!(Path::new(&tmp_dir.path().join("pkg.zip")).exists(), true);
+        Ok(())
+    }
+
+    #[test]
+    fn test_init() -> Result<()> {
+        // given
+        let initial_dir = env::current_dir()?;
+        let tmp_dir = TempDir::new()?;
+        env::set_current_dir(&tmp_dir)?;
+
+        // when
+        init()?;
+
+        // then
+        let cfg_content = read_to_string("./.je")?;
+        assert_eq!(
+            cfg_content,
+            r#"ignore_properties = []
+
+[instance]
+addr = "http://localhost:4502"
+user = "admin"
+pass = "admin"
+"#
+        );
+        env::set_current_dir(initial_dir)?;
         Ok(())
     }
 }
