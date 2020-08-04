@@ -44,7 +44,11 @@ struct Cfg {
 impl Cfg {
     fn load() -> Result<Cfg> {
         debug!("loading config from .je");
-        Ok(toml::from_str(&read_to_string(".je")?)?)
+        if Path::new(".je").exists() {
+            Ok(toml::from_str(&read_to_string(".je")?)?)
+        } else {
+            Ok(Cfg::default())
+        }
     }
 }
 

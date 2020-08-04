@@ -48,7 +48,18 @@ content.
 
 # <p id="configuration">Configuration</p>
 
-## --- TODO ---
+Initialize config. It will create `.je` file with default config:
+```bash
+$ je init
+$ cat .je
+ignore_properties = []
+
+[instance]
+addr = "http://localhost:4502"
+user = "admin"
+pass = "admin"
+```
+
 
 # <p id="license">License</p>
 
