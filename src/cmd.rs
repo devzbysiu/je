@@ -4,7 +4,7 @@ use crate::pkg;
 use crate::pkgdir;
 use crate::pkgmgr;
 use anyhow::Result;
-use log::{debug, info};
+use log::info;
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
 use std::thread;
@@ -35,7 +35,7 @@ pub(crate) enum Cmd {
     Init,
 }
 
-pub(crate) fn get(cfg: &Cfg, path: Path) -> Result<()> {
+pub(crate) fn get(cfg: &Cfg, path: &Path) -> Result<()> {
     info!("executing 'get {}'", path.full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mk(&path, &pkg)?;

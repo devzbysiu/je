@@ -26,7 +26,7 @@ fn main() -> Result<()> {
     let cfg = Cfg::load()?;
     debug!("read config: {:#?}", cfg);
     match opt.cmd {
-        Cmd::Get { path } => cmd::get(&cfg, Path::new(path))?,
+        Cmd::Get { path } => cmd::get(&cfg, &Path::new(path))?,
         Cmd::Init => cmd::init()?,
     }
     Ok(())
