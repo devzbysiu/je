@@ -1,5 +1,5 @@
 use crate::cfg::Cfg;
-use crate::cmd::Opt;
+use crate::cmd::{Cmd, Opt};
 use anyhow::Result;
 use log::debug;
 use path::Path;
@@ -18,9 +18,9 @@ fn main() -> Result<()> {
     debug!("parsed opts: {:#?}", opt);
     let cfg = Cfg::load()?;
     debug!("read config: {:#?}", cfg);
-    match opt {
-        Opt::Get { path } => cmd::get(&cfg, Path::new(path))?,
-        Opt::Init => cmd::init()?,
+    match opt.cmd {
+        Cmd::Get { path } => cmd::get(&cfg, Path::new(path))?,
+        Cmd::Init => cmd::init()?,
     }
     Ok(())
 }

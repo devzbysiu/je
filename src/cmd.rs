@@ -17,8 +17,14 @@ use tempfile::TempDir;
     name = "je",
     about = "Jcr Exchange - easy download and upload files to and from JCR"
 )]
-pub(crate) enum Opt {
+pub(crate) struct Opt {
     /// Download server content to local file server
+    #[structopt(subcommand)]
+    pub(crate) cmd: Cmd,
+}
+
+#[derive(Debug, StructOpt)]
+pub(crate) enum Cmd {
     Get {
         /// path to download
         path: String,
