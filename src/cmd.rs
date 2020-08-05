@@ -84,7 +84,7 @@ fn mv_files(tmp_dir: &TempDir, path: &Path) -> Result<()> {
 fn list_files<P: AsRef<OsPath>>(path: P) {
     debug!("files under {}:", path.as_ref().display());
     for entry in WalkDir::new(path).into_iter().filter_map(Result::ok) {
-        debug!("\tfile: {}", entry.path().display());
+        debug!("\t- {}", entry.path().display());
     }
 }
 
