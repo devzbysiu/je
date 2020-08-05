@@ -4,7 +4,7 @@ use crate::pkg;
 use crate::pkgdir;
 use crate::pkgmgr;
 use anyhow::Result;
-use log::debug;
+use log::{debug, info};
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
 use std::thread;
@@ -18,13 +18,16 @@ use tempfile::TempDir;
     about = "Jcr Exchange - easy download and upload files to and from JCR"
 )]
 pub(crate) struct Opt {
-    /// Download server content to local file server
+    /// Enables INFO logs
+    #[structopt(short, long)]
+    pub(crate) verbose: bool,
     #[structopt(subcommand)]
     pub(crate) cmd: Cmd,
 }
 
 #[derive(Debug, StructOpt)]
 pub(crate) enum Cmd {
+    /// Download server content to local file server
     Get {
         /// path to download
         path: String,
@@ -33,7 +36,7 @@ pub(crate) enum Cmd {
 }
 
 pub(crate) fn get(cfg: &Cfg, path: Path) -> Result<()> {
-    debug!("executing 'get {}'", path.full());
+    info!("executing 'get {}'", path.full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mk(&path, &pkg)?;
     pkg::zip_pkg(&tmp_dir)?;
@@ -49,7 +52,7 @@ pub(crate) fn get(cfg: &Cfg, path: Path) -> Result<()> {
 }
 
 pub(crate) fn init() -> Result<()> {
-    debug!("initializing config file ./.je");
+    info!("initializing config file ./.je");
     let cfg = Cfg::default();
     let mut config_file = OpenOptions::new()
         .write(true)
@@ -61,11 +64,14 @@ pub(crate) fn init() -> Result<()> {
 }
 
 fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
+    info!("cleaning files from unwanted properties");
     Ok(())
 }
 
 fn mv_files(tmp_dir: &TempDir, path: &Path) -> Result<()> {
-    fs::rename(tmp_dir.path().join(path.with_root()), path.full())?;
+    let from = tmp_dir.path().join(path.with_root());
+    info!("moving files from {} to {}", from.display(), path.full());
+    fs::rename(from, path.full())?;
     Ok(())
 }
 

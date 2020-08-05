@@ -1,6 +1,6 @@
 use crate::path::Path;
 use anyhow::Result;
-use log::debug;
+use log::{debug, info};
 use std::fs::{create_dir_all, remove_dir_all, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -110,6 +110,7 @@ fn properties_content(pkg: &Pkg) -> String {
 }
 
 pub(crate) fn clean(tmp_dir: &TempDir) -> Result<()> {
+    info!("cleaning tmp dir: {}", tmp_dir.path().display());
     remove_dir_all(tmp_dir)?;
     create_dir_all(tmp_dir)?;
     Ok(())

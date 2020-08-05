@@ -2,7 +2,7 @@ use crate::cfg::Cfg;
 use crate::pkgdir;
 use anyhow::Result;
 use base64::encode;
-use log::debug;
+use log::{debug, info};
 use reqwest::blocking::multipart;
 use reqwest::blocking::Client;
 use std::fs::File;
@@ -10,6 +10,7 @@ use std::io::prelude::*;
 use tempfile::TempDir;
 
 pub(crate) fn upload_pkg(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
+    info!("uploading pkg to instance: {}", cfg.instance.addr);
     let form = multipart::Form::new().file("package", tmp_dir.path().join("pkg.zip"))?;
     let client = Client::new();
     let resp = client
@@ -31,6 +32,11 @@ pub(crate) fn upload_pkg(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
 }
 
 pub(crate) fn build_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
+    info!(
+        "building pkg with path {} on instance {}",
+        pkg.path(),
+        cfg.instance.addr
+    );
     let client = Client::new();
     let resp = client
         .post(&format!(
@@ -51,6 +57,7 @@ pub(crate) fn build_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
 }
 
 pub(crate) fn download_pkg(tmp_dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
+    info!("downloading pkg");
     let client = Client::new();
     let resp = client
         .get(&format!(

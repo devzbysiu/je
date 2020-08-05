@@ -1,5 +1,5 @@
 use anyhow::Result;
-use log::debug;
+use log::{debug, info};
 use std::env;
 use std::fs::{create_dir_all, File};
 use std::io;
@@ -13,6 +13,10 @@ use zip::ZipWriter;
 
 pub(crate) fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
     let initial_dir = env::current_dir()?;
+    info!(
+        "zipping pkg under tmp directory {}",
+        tmp_dir.path().display()
+    );
 
     debug!(
         "switching dir from {} to {}",
@@ -54,7 +58,7 @@ pub(crate) fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
 
 pub(crate) fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
     let res_zip_path = tmp_dir.path().join("res.zip");
-    debug!("unzipping {}", res_zip_path.display());
+    info!("unzipping {}", res_zip_path.display());
     let mut archive = ZipArchive::new(File::open(res_zip_path)?)?;
 
     for i in 0..archive.len() {
