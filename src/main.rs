@@ -30,21 +30,7 @@ mod test {
     use std::env;
     use std::fs::{read_to_string, File};
     use std::io::prelude::*;
-    use std::path::Path;
     use tempfile::TempDir;
-
-    #[test]
-    fn test_zip_pkg() -> Result<()> {
-        // given
-        let tmp_dir = TempDir::new()?;
-
-        // when
-        pkg::zip_pkg(&tmp_dir)?;
-
-        // then
-        assert_eq!(Path::new(&tmp_dir.path().join("pkg.zip")).exists(), true);
-        Ok(())
-    }
 
     #[test]
     fn test_init() -> Result<()> {

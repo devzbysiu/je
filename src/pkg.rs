@@ -80,3 +80,24 @@ pub(crate) fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use anyhow::Result;
+    use std::path::Path;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_zip_pkg() -> Result<()> {
+        // given
+        let tmp_dir = TempDir::new()?;
+
+        // when
+        zip_pkg(&tmp_dir)?;
+
+        // then
+        assert_eq!(Path::new(&tmp_dir.path().join("pkg.zip")).exists(), true);
+        Ok(())
+    }
+}
