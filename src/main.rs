@@ -1,12 +1,13 @@
+use crate::cfg::Cfg;
+use crate::opt::Opt;
 use crate::pkg::{mk_pkg_dir, Pkg};
 use anyhow::Result;
 use base64::encode;
 use log::debug;
 use reqwest::blocking::multipart;
 use reqwest::blocking::Client;
-use serde_derive::{Deserialize, Serialize};
 use std::env;
-use std::fs::{create_dir_all, read_to_string, remove_dir_all, File, OpenOptions};
+use std::fs::{create_dir_all, remove_dir_all, File, OpenOptions};
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
@@ -19,55 +20,9 @@ use zip::write::FileOptions;
 use zip::ZipArchive;
 use zip::ZipWriter;
 
+mod cfg;
+mod opt;
 mod pkg;
-
-#[derive(Debug, StructOpt)]
-#[structopt(
-    name = "je",
-    about = "Jcr Exchange - easy download and upload files to and from JCR"
-)]
-enum Opt {
-    /// Download server content to local file server
-    Get {
-        /// path to download
-        path: String,
-    },
-    Init,
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-struct Cfg {
-    ignore_properties: Vec<String>,
-    instance: Instance,
-}
-
-impl Cfg {
-    fn load() -> Result<Cfg> {
-        debug!("loading config from .je");
-        if Path::new(".je").exists() {
-            Ok(toml::from_str(&read_to_string(".je")?)?)
-        } else {
-            Ok(Cfg::default())
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Instance {
-    addr: String,
-    user: String,
-    pass: String,
-}
-
-impl Default for Instance {
-    fn default() -> Self {
-        Self {
-            addr: "http://localhost:4502".into(),
-            user: "admin".into(),
-            pass: "admin".into(),
-        }
-    }
-}
 
 fn main() -> Result<()> {
     pretty_env_logger::init();
