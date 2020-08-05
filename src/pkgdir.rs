@@ -1,3 +1,4 @@
+use crate::path::Path;
 use anyhow::Result;
 use log::debug;
 use std::fs::{create_dir_all, remove_dir_all, File};
@@ -33,12 +34,12 @@ impl Default for Pkg {
     }
 }
 
-pub(crate) fn mk(path: &str, pkg: &Pkg) -> Result<TempDir> {
+pub(crate) fn mk(path: &Path, pkg: &Pkg) -> Result<TempDir> {
     debug!("creating pkg dir");
     let tmp_dir = TempDir::new()?;
     mk_jcr_root_dir(&tmp_dir)?;
     mk_vault_dir(&tmp_dir)?;
-    write_filter_content(&tmp_dir, content_path(path))?;
+    write_filter_content(&tmp_dir, path.content())?;
     write_properties_content(&tmp_dir, pkg)?;
     Ok(tmp_dir)
 }
@@ -58,13 +59,6 @@ fn mk_vault_dir(tmp_dir: &TempDir) -> Result<()> {
 
 fn vault_path(tmp_dir: &TempDir) -> PathBuf {
     tmp_dir.path().join("META-INF/vault")
-}
-
-fn content_path<S: Into<String>>(path: S) -> String {
-    let path = path.into();
-    let parts: Vec<&str> = path.split("jcr_root").collect();
-    assert_eq!(parts.len(), 2);
-    parts[1].into()
 }
 
 fn write_filter_content<S: Into<String>>(tmp_dir: &TempDir, content_path: S) -> Result<()> {
@@ -127,7 +121,7 @@ mod test {
     use anyhow::Result;
     use std::fs::create_dir_all;
     use std::fs::read_to_string;
-    use std::path::Path;
+    use std::path::Path as OsPath;
     use tempfile::TempDir;
 
     #[test]
@@ -140,7 +134,7 @@ mod test {
 
         // then
         assert_eq!(
-            Path::new(&format!("{}/jcr_root", tmp_dir.path().display())).exists(),
+            OsPath::new(&format!("{}/jcr_root", tmp_dir.path().display())).exists(),
             true
         );
         Ok(())
@@ -156,7 +150,7 @@ mod test {
 
         // then
         assert_eq!(
-            Path::new(&format!("{}/META-INF/vault", tmp_dir.path().display())).exists(),
+            OsPath::new(&format!("{}/META-INF/vault", tmp_dir.path().display())).exists(),
             true
         );
         Ok(())
@@ -173,7 +167,7 @@ mod test {
 
         // then
         assert_eq!(
-            Path::new(&format!(
+            OsPath::new(&format!(
                 "{}/META-INF/vault/filter.xml",
                 tmp_dir.path().display()
             ))
@@ -198,10 +192,10 @@ mod test {
     #[test]
     fn test_content_path_with_correct_paths() {
         // given
-        let path = "/home/zbychu/project/test/jcr_root/content/abc";
+        let path = Path::new("/home/zbychu/project/test/jcr_root/content/abc");
 
         // when
-        let content_path = content_path(path);
+        let content_path = path.content();
 
         // then
         assert_eq!(content_path, "/content/abc");
@@ -211,10 +205,10 @@ mod test {
     #[should_panic]
     fn test_content_path_with_broken_paths() {
         // given
-        let path = "/home/zbychu/project/test/content/abc";
+        let path = Path::new("/home/zbychu/project/test/content/abc");
 
         // should panic
-        content_path(path);
+        path.content();
     }
 
     #[test]
@@ -229,7 +223,7 @@ mod test {
 
         // then
         assert_eq!(
-            Path::new(&format!(
+            OsPath::new(&format!(
                 "{}/META-INF/vault/properties.xml",
                 tmp_dir.path().display()
             ))
@@ -259,19 +253,19 @@ mod test {
     #[test]
     fn test_mk_pkg_dir() -> Result<()> {
         // given
-        let file_path = "/home/user/project/jcr_root/content/client";
+        let file_path = Path::new("/home/user/project/jcr_root/content/client");
         let pkg = Pkg::default();
 
         // when
-        let tmp_dir_path = mk(file_path, &pkg)?;
+        let tmp_dir_path = mk(&file_path, &pkg)?;
 
         // then
         assert_eq!(
-            Path::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists(),
+            OsPath::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists(),
             true
         );
         assert_eq!(
-            Path::new(&format!(
+            OsPath::new(&format!(
                 "{}/META-INF/vault/filter.xml",
                 tmp_dir_path.path().display()
             ))
@@ -291,7 +285,7 @@ mod test {
         "#,
         );
         assert_eq!(
-            Path::new(&format!(
+            OsPath::new(&format!(
                 "{}/META-INF/vault/properties.xml",
                 tmp_dir_path.path().display()
             ))

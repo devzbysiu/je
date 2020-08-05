@@ -2,10 +2,12 @@ use crate::cfg::Cfg;
 use crate::cmd::Opt;
 use anyhow::Result;
 use log::debug;
+use path::Path;
 use structopt::StructOpt;
 
 mod cfg;
 mod cmd;
+mod path;
 mod pkg;
 mod pkgdir;
 mod pkgmgr;
@@ -17,7 +19,7 @@ fn main() -> Result<()> {
     let cfg = Cfg::load()?;
     debug!("read config: {:#?}", cfg);
     match opt {
-        Opt::Get { path } => cmd::get(&cfg, path)?,
+        Opt::Get { path } => cmd::get(&cfg, Path::new(path))?,
         Opt::Init => cmd::init()?,
     }
     Ok(())

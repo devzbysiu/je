@@ -1,4 +1,5 @@
 use crate::cfg::Cfg;
+use crate::path::Path;
 use crate::pkg;
 use crate::pkgdir;
 use crate::pkgmgr;
@@ -25,9 +26,8 @@ pub(crate) enum Opt {
     Init,
 }
 
-pub(crate) fn get<S: Into<String>>(cfg: &Cfg, path: S) -> Result<()> {
-    let path = path.into();
-    debug!("executing 'get {}'", path);
+pub(crate) fn get(cfg: &Cfg, path: Path) -> Result<()> {
+    debug!("executing 'get {}'", path.full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mk(&path, &pkg)?;
     pkg::zip_pkg(&tmp_dir)?;
