@@ -5,7 +5,7 @@ use crate::pkgdir;
 use crate::pkgmgr;
 use anyhow::Result;
 use log::debug;
-use std::fs::OpenOptions;
+use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
 use std::thread;
 use std::time::Duration;
@@ -38,7 +38,7 @@ pub(crate) fn get(cfg: &Cfg, path: Path) -> Result<()> {
     pkgmgr::download_pkg(&tmp_dir, &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
     cleanup_files(&tmp_dir)?;
-    copy_files()?;
+    mv_files(&tmp_dir, &path)?;
     Ok(())
 }
 
@@ -55,11 +55,12 @@ pub(crate) fn init() -> Result<()> {
 }
 
 fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
-    unimplemented!("not implemented yet");
+    Ok(())
 }
 
-fn copy_files() -> Result<()> {
-    unimplemented!("not implemented yet");
+fn mv_files(tmp_dir: &TempDir, path: &Path) -> Result<()> {
+    fs::rename(tmp_dir.path().join(path.with_root()), path.full())?;
+    Ok(())
 }
 
 #[cfg(test)]
