@@ -62,3 +62,66 @@ fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
 fn copy_files() -> Result<()> {
     unimplemented!("not implemented yet");
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use anyhow::Result;
+    use std::env;
+    use std::fs::{read_to_string, File};
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_init() -> Result<()> {
+        // given
+        let initial_dir = env::current_dir()?;
+        let tmp_dir = TempDir::new()?;
+        env::set_current_dir(&tmp_dir)?;
+
+        // when
+        init()?;
+
+        // then
+        let cfg_content = read_to_string("./.je")?;
+        assert_eq!(
+            cfg_content,
+            r#"ignore_properties = []
+
+[instance]
+addr = "http://localhost:4502"
+user = "admin"
+pass = "admin"
+"#
+        );
+        env::set_current_dir(initial_dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_init_when_file_already_exists() -> Result<()> {
+        // given
+        let initial_dir = env::current_dir()?;
+        let tmp_dir = TempDir::new()?;
+        env::set_current_dir(&tmp_dir)?;
+        let mut cfg_file = File::create(".je")?;
+        cfg_file.write_all(b"not important")?;
+
+        // when
+        init()?;
+
+        // then
+        let cfg_content = read_to_string("./.je")?;
+        assert_eq!(
+            cfg_content,
+            r#"ignore_properties = []
+
+[instance]
+addr = "http://localhost:4502"
+user = "admin"
+pass = "admin"
+"#
+        );
+        env::set_current_dir(initial_dir)?;
+        Ok(())
+    }
+}
