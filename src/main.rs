@@ -2,22 +2,16 @@ use crate::cfg::Cfg;
 use crate::cmd::Opt;
 use anyhow::Result;
 use log::debug;
-use std::env;
-use std::fs::{create_dir_all, remove_dir_all, File, OpenOptions};
-use std::io;
+use std::fs::{create_dir_all, remove_dir_all, OpenOptions};
 use std::io::prelude::*;
-use std::path::Path;
 use std::thread;
 use std::time::Duration;
 use structopt::StructOpt;
 use tempfile::TempDir;
-use walkdir::WalkDir;
-use zip::write::FileOptions;
-use zip::ZipArchive;
-use zip::ZipWriter;
 
 mod cfg;
 mod cmd;
+mod pkg;
 mod pkgdir;
 mod pkgmgr;
 
@@ -40,86 +34,16 @@ fn get<S: Into<String>>(cfg: &Cfg, path: S) -> Result<()> {
     let pkg = pkgdir::Pkg::default();
 
     let tmp_dir = pkgdir::mk(&path, &pkg)?;
-    zip_pkg(&tmp_dir)?;
+    pkg::zip_pkg(&tmp_dir)?;
     pkgmgr::upload_pkg(&cfg, &tmp_dir)?;
     pkgmgr::build_pkg(&cfg, &pkg)?;
     thread::sleep(Duration::from_millis(100));
     remove_dir_all(&tmp_dir)?;
     create_dir_all(&tmp_dir)?;
     pkgmgr::download_pkg(&tmp_dir, &pkg)?;
-    unzip_pkg(&tmp_dir)?;
+    pkg::unzip_pkg(&tmp_dir)?;
     cleanup_files(&tmp_dir)?;
     copy_files()?;
-    Ok(())
-}
-
-fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
-    let initial_dir = env::current_dir()?;
-
-    debug!(
-        "switching dir from {} to {}",
-        &initial_dir.display(),
-        &tmp_dir.path().display()
-    );
-    env::set_current_dir(tmp_dir)?;
-
-    let writer = File::create(tmp_dir.path().join("pkg.zip"))?;
-    let mut zip = ZipWriter::new(writer);
-    let options = FileOptions::default();
-
-    for path in &["jcr_root", "./META-INF"] {
-        let walkdir = WalkDir::new(path);
-        let mut buffer = Vec::new();
-        debug!("zipping {}", path);
-        for entry in &mut walkdir.into_iter().flat_map(Result::ok) {
-            let path = entry.path();
-            if path.is_file() {
-                debug!("{} is a file", path.display());
-                zip.start_file_from_path(path, options)?;
-                let mut f = File::open(path)?;
-                f.read_to_end(&mut buffer)?;
-                zip.write_all(&*buffer)?;
-                buffer.clear();
-            } else {
-                debug!("{} is a dir", path.display());
-                zip.add_directory_from_path(Path::new(path), options)?;
-            }
-        }
-    }
-
-    zip.finish()?;
-
-    debug!("switching back to {}", &initial_dir.display());
-    env::set_current_dir(initial_dir)?;
-    Ok(())
-}
-
-fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
-    let res_zip_path = tmp_dir.path().join("res.zip");
-    debug!("unzipping {}", res_zip_path.display());
-    let mut archive = ZipArchive::new(File::open(res_zip_path)?)?;
-
-    for i in 0..archive.len() {
-        let mut file = archive.by_index(i)?;
-        let outpath = file.sanitized_name();
-
-        let outpath = tmp_dir.path().join(outpath);
-
-        if file.is_dir() {
-            debug!("extracting dir {}", outpath.display());
-            create_dir_all(&outpath)?;
-        } else {
-            debug!("extracting file {}", outpath.display());
-            if let Some(p) = outpath.parent() {
-                if !p.exists() {
-                    create_dir_all(&p)?;
-                }
-            }
-            let mut outfile = File::create(&outpath)?;
-            io::copy(&mut file, &mut outfile)?;
-        }
-    }
-
     Ok(())
 }
 
@@ -148,7 +72,7 @@ mod test {
     use super::*;
     use anyhow::Result;
     use std::env;
-    use std::fs::read_to_string;
+    use std::fs::{read_to_string, File};
     use std::path::Path;
     use tempfile::TempDir;
 
@@ -158,7 +82,7 @@ mod test {
         let tmp_dir = TempDir::new()?;
 
         // when
-        zip_pkg(&tmp_dir)?;
+        pkg::zip_pkg(&tmp_dir)?;
 
         // then
         assert_eq!(Path::new(&tmp_dir.path().join("pkg.zip")).exists(), true);
