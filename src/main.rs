@@ -48,11 +48,11 @@ fn get<S: Into<String>>(cfg: &Cfg, path: S) -> Result<()> {
 }
 
 fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
-    Ok(())
+    unimplemented!("not implemented yet");
 }
 
 fn copy_files() -> Result<()> {
-    Ok(())
+    unimplemented!("not implemented yet");
 }
 
 fn init() -> Result<()> {
