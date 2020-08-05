@@ -4,13 +4,15 @@ use crate::pkg;
 use crate::pkgdir;
 use crate::pkgmgr;
 use anyhow::Result;
-use log::info;
+use log::{debug, info};
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
+use std::path::Path as OsPath;
 use std::thread;
 use std::time::Duration;
 use structopt::StructOpt;
 use tempfile::TempDir;
+use walkdir::WalkDir;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -19,8 +21,8 @@ use tempfile::TempDir;
 )]
 pub(crate) struct Opt {
     /// Enables INFO logs
-    #[structopt(short, long)]
-    pub(crate) verbose: bool,
+    #[structopt(short, long, parse(from_occurrences))]
+    pub(crate) verbose: u8,
     #[structopt(subcommand)]
     pub(crate) cmd: Cmd,
 }
@@ -71,8 +73,16 @@ fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
 fn mv_files(tmp_dir: &TempDir, path: &Path) -> Result<()> {
     let from = tmp_dir.path().join(path.with_root());
     info!("moving files from {} to {}", from.display(), path.full());
+    list_files(&from);
     fs::rename(from, path.full())?;
     Ok(())
+}
+
+fn list_files<P: AsRef<OsPath>>(path: P) {
+    debug!("files under {}:", path.as_ref().display());
+    for entry in WalkDir::new(path).into_iter().filter_map(Result::ok) {
+        debug!("\tfile: {}", entry.path().display());
+    }
 }
 
 #[cfg(test)]

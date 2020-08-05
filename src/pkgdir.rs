@@ -66,7 +66,7 @@ fn write_filter_content<S: Into<String>>(tmp_dir: &TempDir, content_path: S) -> 
     let mut filter_file = File::create(&filter_path)?;
     let filter_content = filter_content(content_path);
     debug!(
-        "writing content {} to filter {}",
+        "writing content\n{}\nto filter {}",
         filter_content, filter_path
     );
     filter_file.write_all(filter_content.as_bytes())?;

@@ -15,9 +15,16 @@ mod pkgmgr;
 
 fn main() -> Result<()> {
     let opt = Opt::from_args();
-    if opt.verbose {
-        env::set_var("RUST_LOG", "je=info");
-        info!("setting INFO level");
+    match opt.verbose {
+        1 => {
+            env::set_var("RUST_LOG", "je=info");
+            info!("setting INFO log level");
+        }
+        2 => {
+            env::set_var("RUST_LOG", "je=debug");
+            info!("setting DEBUG log level");
+        }
+        _ => {}
     }
     pretty_env_logger::init();
 
