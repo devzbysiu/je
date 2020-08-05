@@ -22,7 +22,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_content_path_with_correct_paths() {
+    fn test_content_path_with_correct_path() {
         // given
         let path = Path::new("/home/zbychu/project/test/jcr_root/content/abc");
 
@@ -35,11 +35,23 @@ mod test {
 
     #[test]
     #[should_panic]
-    fn test_content_path_with_broken_paths() {
+    fn test_content_path_with_broken_path() {
         // given
         let path = Path::new("/home/zbychu/project/test/content/abc");
 
         // should panic
         path.content();
+    }
+
+    #[test]
+    fn test_full_path() {
+        // given
+        let path = Path::new("/home/zbychu/project/test/jcr_root/content/abc");
+
+        // when
+        let full_path = path.full();
+
+        // then
+        assert_eq!(full_path, "/home/zbychu/project/test/jcr_root/content/abc");
     }
 }
