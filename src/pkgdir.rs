@@ -95,6 +95,8 @@ fn normalize<S: Into<String>>(path: S) -> String {
         .replace("_dam_", "dam:")
         .replace("_exif_", "exif:")
         .replace("_social_", "social:")
+        .replace(".content.xml", "")
+        .replace(".xml", "")
 }
 
 fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
@@ -301,6 +303,11 @@ mod test {
             ("/content/_dam_asset", "/content/dam:asset"),
             ("/content/_exif_fi", "/content/exif:fi"),
             ("/content/_social_media", "/content/social:media"),
+            (
+                "/content/_jcr_content/.content.xml",
+                "/content/jcr:content/",
+            ),
+            ("/content/_jcr_content.xml", "/content/jcr:content"),
         ];
 
         // then
