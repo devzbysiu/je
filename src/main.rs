@@ -1,6 +1,5 @@
 use crate::cfg::Cfg;
 use crate::cmd::Opt;
-use crate::pkgdir::{mk_pkg_dir, Pkg};
 use anyhow::Result;
 use base64::encode;
 use log::debug;
@@ -40,9 +39,9 @@ fn main() -> Result<()> {
 fn get<S: Into<String>>(cfg: &Cfg, path: S) -> Result<()> {
     let path = path.into();
     debug!("executing 'get {}'", path);
-    let pkg = Pkg::default();
+    let pkg = pkgdir::Pkg::default();
 
-    let tmp_dir = mk_pkg_dir(&path, &pkg)?;
+    let tmp_dir = pkgdir::mk(&path, &pkg)?;
     zip_pkg(&tmp_dir)?;
     upload_pkg(&cfg, &tmp_dir)?;
     build_pkg(&cfg, &pkg)?;
@@ -118,7 +117,7 @@ fn upload_pkg(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
     Ok(())
 }
 
-fn build_pkg(cfg: &Cfg, pkg: &Pkg) -> Result<()> {
+fn build_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
     let client = Client::new();
     let resp = client
         .post(&format!(
@@ -138,7 +137,7 @@ fn build_pkg(cfg: &Cfg, pkg: &Pkg) -> Result<()> {
     Ok(())
 }
 
-fn download_pkg(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
+fn download_pkg(tmp_dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
     let client = Client::new();
     let resp = client
         .get(&format!(

@@ -33,7 +33,7 @@ impl Default for Pkg {
     }
 }
 
-pub(crate) fn mk_pkg_dir(path: &str, pkg: &Pkg) -> Result<TempDir> {
+pub(crate) fn mk(path: &str, pkg: &Pkg) -> Result<TempDir> {
     debug!("creating pkg dir");
     let tmp_dir = TempDir::new()?;
     mk_jcr_root_dir(&tmp_dir)?;
@@ -257,7 +257,7 @@ mod test {
         let pkg = Pkg::default();
 
         // when
-        let tmp_dir_path = mk_pkg_dir(file_path, &pkg)?;
+        let tmp_dir_path = mk(file_path, &pkg)?;
 
         // then
         assert_eq!(
