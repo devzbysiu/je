@@ -1,3 +1,5 @@
+use std::path::Path as OsPath;
+
 pub(crate) struct Path(String);
 
 impl Path {
@@ -22,11 +24,17 @@ impl Path {
         assert_eq!(parts.len(), 2);
         format!("jcr_root{}", parts[1])
     }
+
+    pub(crate) fn is_dir(&self) -> bool {
+        OsPath::new(&self.0).is_dir()
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use anyhow::Result;
+    use tempfile::{NamedTempFile, TempDir};
 
     #[test]
     fn test_content_path_with_correct_path() {
@@ -82,5 +90,25 @@ mod test {
 
         // should panic
         path.with_root();
+    }
+
+    #[test]
+    fn test_is_dir_on_dir() -> Result<()> {
+        // given
+        let tmp_dir = TempDir::new()?;
+
+        // then
+        assert_eq!(Path::new(tmp_dir.path().to_str().unwrap()).is_dir(), true);
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_dir_on_file() -> Result<()> {
+        // given
+        let tmp_file = NamedTempFile::new()?;
+
+        // then
+        assert_eq!(Path::new(tmp_file.path().to_str().unwrap()).is_dir(), false);
+        Ok(())
     }
 }

@@ -80,8 +80,21 @@ fn filter_content<S: Into<String>>(path: S) -> String {
     <filter root="{}"/>
 </workspaceFilter>
         "#,
-        path.into()
+        normalize(path)
     )
+}
+
+fn normalize<S: Into<String>>(path: S) -> String {
+    path.into()
+        .replace("_jcr_", "jcr:")
+        .replace("_rep_", "rep:")
+        .replace("_oak_", "oak:")
+        .replace("_sling_", "sling:")
+        .replace("_granite_", "granite:")
+        .replace("_cq_", "cq:")
+        .replace("_dam_", "dam:")
+        .replace("_exif_", "exif:")
+        .replace("_social_", "social:")
 }
 
 fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
@@ -89,7 +102,7 @@ fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
     let mut prop_file = File::create(&prop_path)?;
     let properties_content = properties_content(&pkg);
     debug!(
-        "writing content {} to properties file {}",
+        "writing content\n{}\nto properties file {}",
         &properties_content, prop_path
     );
     prop_file.write_all(properties_content.as_bytes())?;
@@ -273,5 +286,26 @@ mod test {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn test_normalize() {
+        // given
+        let test_cases = vec![
+            ("/content/_jcr_content", "/content/jcr:content"),
+            ("/content/_rep_policy", "/content/rep:policy"),
+            ("/content/_oak_root", "/content/oak:root"),
+            ("/content/_sling_order", "/content/sling:order"),
+            ("/content/_granite_var", "/content/granite:var"),
+            ("/content/_cq_dialog", "/content/cq:dialog"),
+            ("/content/_dam_asset", "/content/dam:asset"),
+            ("/content/_exif_fi", "/content/exif:fi"),
+            ("/content/_social_media", "/content/social:media"),
+        ];
+
+        // then
+        for (input, expected) in test_cases {
+            assert_eq!(normalize(input), expected);
+        }
     }
 }

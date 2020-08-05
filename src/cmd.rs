@@ -74,6 +74,9 @@ fn mv_files(tmp_dir: &TempDir, path: &Path) -> Result<()> {
     let from = tmp_dir.path().join(path.with_root());
     info!("moving files from {} to {}", from.display(), path.full());
     list_files(&from);
+    if path.is_dir() {
+        fs::remove_dir_all(path.full())?;
+    }
     fs::rename(from, path.full())?;
     Ok(())
 }
