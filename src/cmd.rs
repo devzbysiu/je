@@ -4,7 +4,7 @@ use crate::pkgdir;
 use crate::pkgmgr;
 use anyhow::Result;
 use log::debug;
-use std::fs::{create_dir_all, remove_dir_all, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::thread;
 use std::time::Duration;
@@ -34,8 +34,7 @@ pub(crate) fn get<S: Into<String>>(cfg: &Cfg, path: S) -> Result<()> {
     pkgmgr::upload_pkg(&cfg, &tmp_dir)?;
     pkgmgr::build_pkg(&cfg, &pkg)?;
     thread::sleep(Duration::from_millis(100));
-    remove_dir_all(&tmp_dir)?;
-    create_dir_all(&tmp_dir)?;
+    pkgdir::clean(&tmp_dir)?;
     pkgmgr::download_pkg(&tmp_dir, &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
     cleanup_files(&tmp_dir)?;

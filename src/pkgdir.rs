@@ -1,6 +1,6 @@
 use anyhow::Result;
 use log::debug;
-use std::fs::{create_dir_all, File};
+use std::fs::{create_dir_all, remove_dir_all, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -113,6 +113,12 @@ fn properties_content(pkg: &Pkg) -> String {
 </properties>"#,
         pkg.name, pkg.version, pkg.group
     )
+}
+
+pub(crate) fn clean(tmp_dir: &TempDir) -> Result<()> {
+    remove_dir_all(tmp_dir)?;
+    create_dir_all(tmp_dir)?;
+    Ok(())
 }
 
 #[cfg(test)]
