@@ -48,7 +48,11 @@ content.
 
 # <p id="configuration">Configuration</p>
 
-Initialize config. It will create `.je` file with default config:
+### Default
+Configuration file is not required. Without it, `je` will use default configuration.
+However, you can still initialize config and change it. The default configuration is the initial
+one:
+
 ```bash
 $ je init
 $ cat .je
@@ -59,6 +63,16 @@ addr = "http://localhost:4502"
 user = "admin"
 pass = "admin"
 ```
+
+### Customize
+`ignore_properties` - tell `je` which properties of `.content.xml` should be removed after
+downloading the content
+
+`addr` - address of the instance, including port if domain is not available
+
+`user` - user used to authenticate to AEM instance
+
+`pass` - password used to authenticate to AEM instance
 
 
 # <p id="license">License</p>
