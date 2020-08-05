@@ -1,5 +1,5 @@
 use crate::cfg::Cfg;
-use crate::opt::Opt;
+use crate::cmd::Opt;
 use crate::pkg::{mk_pkg_dir, Pkg};
 use anyhow::Result;
 use base64::encode;
@@ -21,7 +21,7 @@ use zip::ZipArchive;
 use zip::ZipWriter;
 
 mod cfg;
-mod opt;
+mod cmd;
 mod pkg;
 
 fn main() -> Result<()> {
