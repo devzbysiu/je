@@ -2,12 +2,7 @@ use crate::cfg::Cfg;
 use crate::cmd::Opt;
 use anyhow::Result;
 use log::debug;
-use std::fs::{create_dir_all, remove_dir_all, OpenOptions};
-use std::io::prelude::*;
-use std::thread;
-use std::time::Duration;
 use structopt::StructOpt;
-use tempfile::TempDir;
 
 mod cfg;
 mod cmd;
@@ -22,48 +17,9 @@ fn main() -> Result<()> {
     let cfg = Cfg::load()?;
     debug!("read config: {:#?}", cfg);
     match opt {
-        Opt::Get { path } => get(&cfg, path)?,
-        Opt::Init => init()?,
+        Opt::Get { path } => cmd::get(&cfg, path)?,
+        Opt::Init => cmd::init()?,
     }
-    Ok(())
-}
-
-fn get<S: Into<String>>(cfg: &Cfg, path: S) -> Result<()> {
-    let path = path.into();
-    debug!("executing 'get {}'", path);
-    let pkg = pkgdir::Pkg::default();
-
-    let tmp_dir = pkgdir::mk(&path, &pkg)?;
-    pkg::zip_pkg(&tmp_dir)?;
-    pkgmgr::upload_pkg(&cfg, &tmp_dir)?;
-    pkgmgr::build_pkg(&cfg, &pkg)?;
-    thread::sleep(Duration::from_millis(100));
-    remove_dir_all(&tmp_dir)?;
-    create_dir_all(&tmp_dir)?;
-    pkgmgr::download_pkg(&tmp_dir, &pkg)?;
-    pkg::unzip_pkg(&tmp_dir)?;
-    cleanup_files(&tmp_dir)?;
-    copy_files()?;
-    Ok(())
-}
-
-fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
-    unimplemented!("not implemented yet");
-}
-
-fn copy_files() -> Result<()> {
-    unimplemented!("not implemented yet");
-}
-
-fn init() -> Result<()> {
-    debug!("initializing config file ./.je");
-    let cfg = Cfg::default();
-    let mut config_file = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .create(true)
-        .open(".je")?;
-    config_file.write_all(toml::to_string(&cfg)?.as_bytes())?;
     Ok(())
 }
 
@@ -73,6 +29,7 @@ mod test {
     use anyhow::Result;
     use std::env;
     use std::fs::{read_to_string, File};
+    use std::io::prelude::*;
     use std::path::Path;
     use tempfile::TempDir;
 
@@ -97,7 +54,7 @@ mod test {
         env::set_current_dir(&tmp_dir)?;
 
         // when
-        init()?;
+        cmd::init()?;
 
         // then
         let cfg_content = read_to_string("./.je")?;
@@ -125,7 +82,7 @@ pass = "admin"
         cfg_file.write_all(b"not important")?;
 
         // when
-        init()?;
+        cmd::init()?;
 
         // then
         let cfg_content = read_to_string("./.je")?;
