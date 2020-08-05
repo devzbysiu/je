@@ -1,10 +1,7 @@
 use crate::cfg::Cfg;
 use crate::cmd::Opt;
 use anyhow::Result;
-use base64::encode;
 use log::debug;
-use reqwest::blocking::multipart;
-use reqwest::blocking::Client;
 use std::env;
 use std::fs::{create_dir_all, remove_dir_all, File, OpenOptions};
 use std::io;
@@ -22,6 +19,7 @@ use zip::ZipWriter;
 mod cfg;
 mod cmd;
 mod pkgdir;
+mod pkgmgr;
 
 fn main() -> Result<()> {
     pretty_env_logger::init();
@@ -43,12 +41,12 @@ fn get<S: Into<String>>(cfg: &Cfg, path: S) -> Result<()> {
 
     let tmp_dir = pkgdir::mk(&path, &pkg)?;
     zip_pkg(&tmp_dir)?;
-    upload_pkg(&cfg, &tmp_dir)?;
-    build_pkg(&cfg, &pkg)?;
+    pkgmgr::upload_pkg(&cfg, &tmp_dir)?;
+    pkgmgr::build_pkg(&cfg, &pkg)?;
     thread::sleep(Duration::from_millis(100));
     remove_dir_all(&tmp_dir)?;
     create_dir_all(&tmp_dir)?;
-    download_pkg(&tmp_dir, &pkg)?;
+    pkgmgr::download_pkg(&tmp_dir, &pkg)?;
     unzip_pkg(&tmp_dir)?;
     cleanup_files(&tmp_dir)?;
     copy_files()?;
@@ -93,62 +91,6 @@ fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
 
     debug!("switching back to {}", &initial_dir.display());
     env::set_current_dir(initial_dir)?;
-    Ok(())
-}
-
-fn upload_pkg(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
-    let form = multipart::Form::new().file("package", tmp_dir.path().join("pkg.zip"))?;
-    let client = Client::new();
-    let resp = client
-        .post(&format!(
-            "{}/crx/packmgr/service/.json?cmd=upload",
-            cfg.instance.addr
-        ))
-        .header(
-            "Authorization",
-            format!(
-                "Basic {}",
-                encode(format!("{}:{}", cfg.instance.user, cfg.instance.pass))
-            ),
-        )
-        .multipart(form)
-        .send()?;
-    debug!("upload pkg response: {:#?}", resp);
-    Ok(())
-}
-
-fn build_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
-    let client = Client::new();
-    let resp = client
-        .post(&format!(
-            "{}/crx/packmgr/service/script.html/etc/packages/{}?cmd=build",
-            cfg.instance.addr,
-            pkg.path(),
-        ))
-        .header(
-            "Authorization",
-            format!(
-                "Basic {}",
-                encode(format!("{}:{}", cfg.instance.user, cfg.instance.pass))
-            ),
-        )
-        .send()?;
-    debug!("build pkg response: {:#?}", resp);
-    Ok(())
-}
-
-fn download_pkg(tmp_dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
-    let client = Client::new();
-    let resp = client
-        .get(&format!(
-            "http://localhost:4502/etc/packages/{}",
-            pkg.path(),
-        ))
-        .header("Authorization", format!("Basic {}", encode("admin:admin")))
-        .send()?;
-    debug!("download pkg response: {:#?}", resp);
-    let mut pkg_file = File::create(tmp_dir.path().join("res.zip"))?;
-    pkg_file.write_all(&resp.bytes()?)?;
     Ok(())
 }
 
