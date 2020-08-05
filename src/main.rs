@@ -1,6 +1,6 @@
 use crate::cfg::Cfg;
 use crate::cmd::Opt;
-use crate::pkg::{mk_pkg_dir, Pkg};
+use crate::pkgdir::{mk_pkg_dir, Pkg};
 use anyhow::Result;
 use base64::encode;
 use log::debug;
@@ -22,7 +22,7 @@ use zip::ZipWriter;
 
 mod cfg;
 mod cmd;
-mod pkg;
+mod pkgdir;
 
 fn main() -> Result<()> {
     pretty_env_logger::init();
