@@ -71,3 +71,7 @@ pub(crate) fn download_pkg(tmp_dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
     pkg_file.write_all(&resp.bytes()?)?;
     Ok(())
 }
+
+pub(crate) fn install_pkg(_tmp_dir: &Cfg, _pkg: &pkgdir::Pkg) -> Result<()> {
+    Ok(())
+}

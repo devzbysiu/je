@@ -147,6 +147,6 @@ mod test {
         let path = Path::new(root.display().to_string());
 
         // should_panic
-        let path = path.parent_from_root().unwrap();
+        path.parent_from_root().unwrap();
     }
 }

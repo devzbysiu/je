@@ -4,6 +4,8 @@ use crate::pkg;
 use crate::pkgdir;
 use crate::pkgmgr;
 use anyhow::Result;
+use fs_extra::{dir, dir::CopyOptions as DirOpts};
+use fs_extra::{file, file::CopyOptions as FileOpts};
 use log::{debug, info};
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
@@ -29,28 +31,17 @@ pub(crate) struct Opt {
 
 #[derive(Debug, StructOpt)]
 pub(crate) enum Cmd {
-    /// Download server content to local file server
+    /// Download content to local file system
     Get {
         /// path to download
         path: String,
     },
+    /// Upload content to AEM instance
+    Put {
+        /// path to upload
+        path: String,
+    },
     Init,
-}
-
-pub(crate) fn get(cfg: &Cfg, path: &Path) -> Result<()> {
-    info!("executing 'get {}'", path.full());
-    let pkg = pkgdir::Pkg::default();
-    let tmp_dir = pkgdir::mk(&path, &pkg)?;
-    pkg::zip_pkg(&tmp_dir)?;
-    pkgmgr::upload_pkg(&cfg, &tmp_dir)?;
-    pkgmgr::build_pkg(&cfg, &pkg)?;
-    thread::sleep(Duration::from_millis(100));
-    pkgdir::clean(&tmp_dir)?;
-    pkgmgr::download_pkg(&tmp_dir, &pkg)?;
-    pkg::unzip_pkg(&tmp_dir)?;
-    cleanup_files(&tmp_dir)?;
-    mv_files(&tmp_dir, &path)?;
-    Ok(())
 }
 
 pub(crate) fn init() -> Result<()> {
@@ -65,13 +56,29 @@ pub(crate) fn init() -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn get(cfg: &Cfg, path: &Path) -> Result<()> {
+    info!("executing 'get {}'", path.full());
+    let pkg = pkgdir::Pkg::default();
+    let tmp_dir = pkgdir::mk(&path, &pkg)?;
+    pkg::zip_pkg(&tmp_dir)?;
+    pkgmgr::upload_pkg(&cfg, &tmp_dir)?;
+    pkgmgr::build_pkg(&cfg, &pkg)?;
+    thread::sleep(Duration::from_millis(100));
+    pkgdir::clean(&tmp_dir)?;
+    pkgmgr::download_pkg(&tmp_dir, &pkg)?;
+    pkg::unzip_pkg(&tmp_dir)?;
+    cleanup_files(&tmp_dir)?;
+    mv_files_back(&tmp_dir, &path)?;
+    Ok(())
+}
+
 fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
     info!("cleaning files from unwanted properties");
     Ok(())
 }
 
-fn mv_files(tmp_dir: &TempDir, path: &Path) -> Result<()> {
-    let from = tmp_dir.path().join(path.with_root());
+fn mv_files_back(tmp_dir: &TempDir, path: &Path) -> Result<()> {
+    let from = tmp_dir.path().join(path.from_root());
     info!("moving files from {} to {}", from.display(), path.full());
     list_files(&from);
     if path.is_dir() {
@@ -86,6 +93,36 @@ fn list_files<P: AsRef<OsPath>>(path: P) {
     for entry in WalkDir::new(path).into_iter().filter_map(Result::ok) {
         debug!("\t- {}", entry.path().display());
     }
+}
+
+pub(crate) fn put(cfg: &Cfg, path: &Path) -> Result<()> {
+    info!("executing 'put {}'", path.full());
+    let pkg = pkgdir::Pkg::default();
+    let tmp_dir = pkgdir::mk(path, &pkg)?;
+    cp_files_to_pkg(path, &tmp_dir)?;
+    pkg::zip_pkg(&tmp_dir)?;
+    pkgmgr::upload_pkg(cfg, &tmp_dir)?;
+    pkgmgr::install_pkg(cfg, &pkg)?;
+    Ok(())
+}
+
+fn cp_files_to_pkg(path: &Path, tmp_dir: &TempDir) -> Result<()> {
+    let dst_path = tmp_dir.path().join(path.parent_from_root()?);
+    info!(
+        "copying files from {} to {}",
+        path.full(),
+        dst_path.display()
+    );
+    fs::create_dir_all(&dst_path)?;
+    if path.is_dir() {
+        debug!("{} is a dir", path.full());
+        dir::copy(path.full(), dst_path, &DirOpts::new())?;
+    } else {
+        let dst_path = tmp_dir.path().join(path.from_root());
+        debug!("{} is a file", path.full());
+        file::copy(path.full(), dst_path, &FileOpts::new())?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
