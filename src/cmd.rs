@@ -65,7 +65,7 @@ pub(crate) fn get(cfg: &Cfg, path: &Path) -> Result<()> {
     pkgmgr::build_pkg(&cfg, &pkg)?;
     thread::sleep(Duration::from_millis(100));
     pkgdir::clean(&tmp_dir)?;
-    pkgmgr::download_pkg(&tmp_dir, &pkg)?;
+    pkgmgr::download_pkg(cfg, &tmp_dir, &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
     cleanup_files(&tmp_dir)?;
     mv_files_back(&tmp_dir, &path)?;

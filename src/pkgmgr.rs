@@ -40,7 +40,7 @@ pub(crate) fn build_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
     let client = Client::new();
     let resp = client
         .post(&format!(
-            "{}/crx/packmgr/service/script.html/etc/packages/{}?cmd=build",
+            "{}/crx/packmgr/service/.json/etc/packages/{}?cmd=build",
             cfg.instance.addr,
             pkg.path(),
         ))
@@ -56,12 +56,13 @@ pub(crate) fn build_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn download_pkg(tmp_dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
+pub(crate) fn download_pkg(cfg: &Cfg, tmp_dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
     info!("downloading pkg");
     let client = Client::new();
     let resp = client
         .get(&format!(
-            "http://localhost:4502/etc/packages/{}",
+            "{}/etc/packages/{}",
+            cfg.instance.addr,
             pkg.path(),
         ))
         .header("Authorization", format!("Basic {}", encode("admin:admin")))
@@ -72,6 +73,27 @@ pub(crate) fn download_pkg(tmp_dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn install_pkg(_tmp_dir: &Cfg, _pkg: &pkgdir::Pkg) -> Result<()> {
+pub(crate) fn install_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
+    info!(
+        "installing pkg {} on instance: {}",
+        pkg.path(),
+        cfg.instance.addr
+    );
+    let client = Client::new();
+    let resp = client
+        .post(&format!(
+            "{}/crx/packmgr/service/.json/etc/packages/{}?cmd=install",
+            cfg.instance.addr,
+            pkg.path()
+        ))
+        .header(
+            "Authorization",
+            format!(
+                "Basic {}",
+                encode(format!("{}:{}", cfg.instance.user, cfg.instance.pass))
+            ),
+        )
+        .send()?;
+    debug!("install pkg response: {:#?}", resp);
     Ok(())
 }
