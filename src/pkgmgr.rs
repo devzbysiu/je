@@ -97,3 +97,28 @@ pub(crate) fn install_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
     debug!("install pkg response: {:#?}", resp);
     Ok(())
 }
+
+pub(crate) fn delete_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
+    info!(
+        "deleting pkg {} on instance: {}",
+        pkg.path(),
+        cfg.instance.addr
+    );
+    let client = Client::new();
+    let resp = client
+        .post(&format!(
+            "{}/crx/packmgr/service/.json/etc/packages/{}?cmd=delete",
+            cfg.instance.addr,
+            pkg.path()
+        ))
+        .header(
+            "Authorization",
+            format!(
+                "Basic {}",
+                encode(format!("{}:{}", cfg.instance.user, cfg.instance.pass))
+            ),
+        )
+        .send()?;
+    debug!("delete pkg response: {:#?}", resp);
+    Ok(())
+}

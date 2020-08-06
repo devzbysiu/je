@@ -66,6 +66,7 @@ pub(crate) fn get(cfg: &Cfg, path: &Path) -> Result<()> {
     thread::sleep(Duration::from_millis(100));
     pkgdir::clean(&tmp_dir)?;
     pkgmgr::download_pkg(cfg, &tmp_dir, &pkg)?;
+    pkgmgr::delete_pkg(cfg, &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
     cleanup_files(&tmp_dir)?;
     mv_files_back(&tmp_dir, &path)?;
@@ -103,6 +104,7 @@ pub(crate) fn put(cfg: &Cfg, path: &Path) -> Result<()> {
     pkg::zip_pkg(&tmp_dir)?;
     pkgmgr::upload_pkg(cfg, &tmp_dir)?;
     pkgmgr::install_pkg(cfg, &pkg)?;
+    pkgmgr::delete_pkg(cfg, &pkg)?;
     Ok(())
 }
 
