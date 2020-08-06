@@ -19,7 +19,7 @@ impl Path {
         self.0.clone()
     }
 
-    pub(crate) fn with_root(&self) -> String {
+    pub(crate) fn from_root(&self) -> String {
         let path = &self.0;
         let parts: Vec<&str> = path.split("jcr_root").collect();
         assert_eq!(parts.len(), 2);
@@ -30,12 +30,16 @@ impl Path {
         OsPath::new(&self.0).is_dir()
     }
 
-    pub(crate) fn parent(&self) -> Result<String> {
-        Ok(OsPath::new(&self.full())
+    pub(crate) fn parent_from_root(&self) -> Result<String> {
+        let parent = OsPath::new(&self.full())
             .parent()
             .unwrap_or(OsPath::new("/"))
             .display()
-            .to_string())
+            .to_string();
+        let parts: Vec<&str> = parent.split("jcr_root").collect();
+        assert_eq!(parts.len(), 2);
+        let path: String = parts[1].into();
+        Ok(format!("jcr_root{}", path))
     }
 }
 
@@ -80,12 +84,12 @@ mod test {
     }
 
     #[test]
-    fn test_with_root_with_correct_path() {
+    fn test_from_root_with_correct_path() {
         // given
         let path = Path::new("/home/zbychu/project/test/jcr_root/content/abc");
 
         // when
-        let path = path.with_root();
+        let path = path.from_root();
 
         // then
         assert_eq!(path, "jcr_root/content/abc");
@@ -93,12 +97,12 @@ mod test {
 
     #[test]
     #[should_panic]
-    fn test_with_root_with_wrong_path() {
+    fn test_from_root_with_wrong_path() {
         // given
         let path = Path::new("/home/zbychu/project/test");
 
         // should panic
-        path.with_root();
+        path.from_root();
     }
 
     #[test]
@@ -124,31 +128,25 @@ mod test {
     #[test]
     fn test_parent() -> Result<()> {
         // given
-        let tmp_file = NamedTempFile::new()?;
-        let path = Path::new(tmp_file.path().display().to_string());
+        let full_path = OsPath::new("/home/zbychu/jcr_root/content/test");
+        let path = Path::new(full_path.display().to_string());
 
         // when
-        let path = path.parent()?;
+        let path = path.parent_from_root()?;
 
         // then
-        assert_eq!(
-            path,
-            tmp_file.path().parent().unwrap().display().to_string()
-        );
+        assert_eq!(path, "jcr_root/content");
         Ok(())
     }
 
     #[test]
-    fn test_parent_on_root() -> Result<()> {
+    #[should_panic]
+    fn test_parent_on_root() {
         // given
         let root = OsPath::new("/");
         let path = Path::new(root.display().to_string());
 
-        // when
-        let path = path.parent()?;
-
-        // then
-        assert_eq!(path, "/");
-        Ok(())
+        // should_panic
+        let path = path.parent_from_root().unwrap();
     }
 }
