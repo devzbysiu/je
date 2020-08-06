@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::path::Path as OsPath;
 
 pub(crate) struct Path(String);
@@ -27,6 +28,14 @@ impl Path {
 
     pub(crate) fn is_dir(&self) -> bool {
         OsPath::new(&self.0).is_dir()
+    }
+
+    pub(crate) fn parent(&self) -> Result<String> {
+        Ok(OsPath::new(&self.full())
+            .parent()
+            .unwrap_or(OsPath::new("/"))
+            .display()
+            .to_string())
     }
 }
 
@@ -109,6 +118,37 @@ mod test {
 
         // then
         assert_eq!(Path::new(tmp_file.path().to_str().unwrap()).is_dir(), false);
+        Ok(())
+    }
+
+    #[test]
+    fn test_parent() -> Result<()> {
+        // given
+        let tmp_file = NamedTempFile::new()?;
+        let path = Path::new(tmp_file.path().display().to_string());
+
+        // when
+        let path = path.parent()?;
+
+        // then
+        assert_eq!(
+            path,
+            tmp_file.path().parent().unwrap().display().to_string()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_parent_on_root() -> Result<()> {
+        // given
+        let root = OsPath::new("/");
+        let path = Path::new(root.display().to_string());
+
+        // when
+        let path = path.parent()?;
+
+        // then
+        assert_eq!(path, "/");
         Ok(())
     }
 }
