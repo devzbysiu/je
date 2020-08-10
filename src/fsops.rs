@@ -48,8 +48,8 @@ impl Entry {
     }
 }
 
-impl From<&str> for Entry {
-    fn from(path: &str) -> Self {
+impl From<&OsPath> for Entry {
+    fn from(path: &OsPath) -> Self {
         Self {
             path: PathBuf::from(path),
             direntry: None,
@@ -136,6 +136,7 @@ fn list_files<P: AsRef<OsPath>>(path: P) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_allowed_prop() {
@@ -160,5 +161,20 @@ mod test {
             // then
             assert_eq!(result, test_case.1);
         }
+    }
+
+    #[test]
+    fn test_is_file() -> Result<()> {
+        // given
+        let tmpfile = NamedTempFile::new()?;
+        let entry = Entry::from(tmpfile.path());
+
+        // when
+        let is_xml_file = entry.is_file();
+
+        // then
+        assert_eq!(is_xml_file, true);
+
+        Ok(())
     }
 }
