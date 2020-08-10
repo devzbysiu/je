@@ -136,7 +136,7 @@ fn list_files<P: AsRef<OsPath>>(path: P) {
 #[cfg(test)]
 mod test {
     use super::*;
-    use tempfile::NamedTempFile;
+    use tempfile::{NamedTempFile, TempDir};
 
     #[test]
     fn test_allowed_prop() {
@@ -164,7 +164,7 @@ mod test {
     }
 
     #[test]
-    fn test_is_file() -> Result<()> {
+    fn test_is_file_with_file() -> Result<()> {
         // given
         let tmpfile = NamedTempFile::new()?;
         let entry = Entry::from(tmpfile.path());
@@ -174,6 +174,21 @@ mod test {
 
         // then
         assert_eq!(is_xml_file, true);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_file_with_directory() -> Result<()> {
+        // given
+        let tmpdir = TempDir::new()?;
+        let entry = Entry::from(tmpdir.path());
+
+        // when
+        let is_xml_file = entry.is_file();
+
+        // then
+        assert_eq!(is_xml_file, false);
 
         Ok(())
     }
