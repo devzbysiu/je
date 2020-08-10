@@ -17,7 +17,7 @@ struct Entry {
 
 impl Entry {
     fn is_xml_file(&self) -> bool {
-        self.is_file() && self.is_xml()
+        self.is_file() && self.is_content_xml()
     }
 
     fn is_file(&self) -> bool {
@@ -30,7 +30,7 @@ impl Entry {
         is_file
     }
 
-    fn is_xml(&self) -> bool {
+    fn is_content_xml(&self) -> bool {
         let is_xml = self.path().ends_with(".content.xml");
         debug!(
             "{} {} xml file",
@@ -70,12 +70,10 @@ pub(crate) fn cleanup_files(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
     info!("cleaning files from unwanted properties");
     for entry in WalkDir::new(tmp_dir.path().join("jcr_root"))
         .into_iter()
-        .filter_map(Result::ok)
-        .map(|e| Entry::from(e))
+        .filter_map(to_entry)
         .filter(Entry::is_xml_file)
     {
         debug!("cleaning file {}", entry.path().display());
-        let entry: Entry = entry.into();
         let mut file = File::open(entry.path())?;
         let reader = BufReader::new(&mut file);
         let lines: Vec<_> = reader
@@ -95,6 +93,13 @@ pub(crate) fn cleanup_files(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn to_entry(result: std::result::Result<DirEntry, walkdir::Error>) -> Option<Entry> {
+    match result.ok() {
+        Some(e) => Some(Entry::from(e)),
+        None => None,
+    }
 }
 
 fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[String]) -> Option<String> {
@@ -136,6 +141,7 @@ fn list_files<P: AsRef<OsPath>>(path: P) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::fs::File;
     use tempfile::{NamedTempFile, TempDir};
 
     #[test]
@@ -189,6 +195,24 @@ mod test {
 
         // then
         assert_eq!(is_xml_file, false);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_content_xml_with_xml_file() -> Result<()> {
+        // given
+        let tmpdir = TempDir::new()?;
+        let xml_filepath = tmpdir.path().join(".content.xml");
+        let mut file = File::create(&xml_filepath)?;
+        file.write_all(b"test_content")?;
+        let entry = Entry::from(xml_filepath.as_path());
+
+        // when
+        let is_xml = entry.is_content_xml();
+
+        // then
+        assert_eq!(is_xml, true);
 
         Ok(())
     }
