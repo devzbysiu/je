@@ -44,6 +44,8 @@ content.
 
 # <p id="installation">Installation</p>
 
+-- TODO: add more installation options
+
 Rust programmers:
 ```bash
 cargo install je
