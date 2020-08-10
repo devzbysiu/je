@@ -6,17 +6,76 @@ use std::fs::{self, File, OpenOptions};
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path as OsPath;
+use std::path::PathBuf;
 use tempfile::TempDir;
 use walkdir::{DirEntry, WalkDir};
+
+struct Entry {
+    path: PathBuf,
+    direntry: Option<DirEntry>,
+}
+
+impl Entry {
+    fn is_xml_file(&self) -> bool {
+        self.is_file() && self.is_xml()
+    }
+
+    fn is_file(&self) -> bool {
+        let is_file = self.path().is_file();
+        debug!(
+            "{} {} a file",
+            self.path().display(),
+            if is_file { "is" } else { "is not" }
+        );
+        is_file
+    }
+
+    fn is_xml(&self) -> bool {
+        let is_xml = self.path().ends_with(".content.xml");
+        debug!(
+            "{} {} xml file",
+            self.path().display(),
+            if is_xml { "is" } else { "is not" }
+        );
+        is_xml
+    }
+
+    fn path(&self) -> &OsPath {
+        match self.direntry {
+            Some(ref e) => e.path(),
+            None => self.path.as_ref(),
+        }
+    }
+}
+
+impl From<&str> for Entry {
+    fn from(path: &str) -> Self {
+        Self {
+            path: PathBuf::from(path),
+            direntry: None,
+        }
+    }
+}
+
+impl From<DirEntry> for Entry {
+    fn from(direntry: DirEntry) -> Self {
+        Self {
+            path: direntry.path().into(),
+            direntry: Some(direntry),
+        }
+    }
+}
 
 pub(crate) fn cleanup_files(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
     info!("cleaning files from unwanted properties");
     for entry in WalkDir::new(tmp_dir.path().join("jcr_root"))
         .into_iter()
         .filter_map(Result::ok)
-        .filter(|e| is_xml_file(e))
+        .map(|e| Entry::from(e))
+        .filter(Entry::is_xml_file)
     {
         debug!("cleaning file {}", entry.path().display());
+        let entry: Entry = entry.into();
         let mut file = File::open(entry.path())?;
         let reader = BufReader::new(&mut file);
         let lines: Vec<_> = reader
@@ -36,30 +95,6 @@ pub(crate) fn cleanup_files(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
     }
 
     Ok(())
-}
-
-fn is_xml_file(e: &DirEntry) -> bool {
-    is_file(e) && is_xml(e)
-}
-
-fn is_file(e: &DirEntry) -> bool {
-    let is_file = e.path().is_file();
-    debug!(
-        "{} {} a file",
-        e.path().display(),
-        if is_file { "is" } else { "is not" }
-    );
-    is_file
-}
-
-fn is_xml(e: &DirEntry) -> bool {
-    let is_xml = e.path().ends_with(".content.xml");
-    debug!(
-        "{} {} xml file",
-        e.path().display(),
-        if is_xml { "is" } else { "is not" }
-    );
-    is_xml
 }
 
 fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[String]) -> Option<String> {
