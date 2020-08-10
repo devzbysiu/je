@@ -216,4 +216,22 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn test_is_content_xml_with_other_file() -> Result<()> {
+        // given
+        let tmpdir = TempDir::new()?;
+        let xml_filepath = tmpdir.path().join("some-other-file.xml");
+        let mut file = File::create(&xml_filepath)?;
+        file.write_all(b"test_content")?;
+        let entry = Entry::from(xml_filepath.as_path());
+
+        // when
+        let is_xml = entry.is_content_xml();
+
+        // then
+        assert_eq!(is_xml, false);
+
+        Ok(())
+    }
 }
