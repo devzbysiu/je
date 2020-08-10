@@ -44,12 +44,15 @@ content.
 
 # <p id="installation">Installation</p>
 
-## --- TODO ---
+Rust programmers:
+```bash
+cargo install je
+```
 
 # <p id="configuration">Configuration</p>
 
 ### Default
-Configuration file is not required. Without it, `je` will use default configuration.
+Configuration file is **not** required. Without it, `je` will use default configuration.
 However, you can still initialize config and change it. The default configuration is the initial
 one:
 
