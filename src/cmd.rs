@@ -7,14 +7,15 @@ use anyhow::Result;
 use fs_extra::{dir, dir::CopyOptions as DirOpts};
 use fs_extra::{file, file::CopyOptions as FileOpts};
 use log::{debug, info};
-use std::fs::{self, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::prelude::*;
+use std::io::BufReader;
 use std::path::{Path as OsPath, PathBuf};
 use std::thread;
 use std::time::Duration;
 use structopt::StructOpt;
 use tempfile::TempDir;
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -61,21 +62,87 @@ pub(crate) fn get(cfg: &Cfg, path: &Path) -> Result<()> {
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mk(&path, &pkg)?;
     pkg::zip_pkg(&tmp_dir)?;
-    pkgmgr::upload_pkg(&cfg, &tmp_dir)?;
-    pkgmgr::build_pkg(&cfg, &pkg)?;
+    pkgmgr::upload_pkg(cfg, &tmp_dir)?;
+    pkgmgr::build_pkg(cfg, &pkg)?;
     thread::sleep(Duration::from_millis(100));
     pkgdir::clean(&tmp_dir)?;
     pkgmgr::download_pkg(cfg, &tmp_dir, &pkg)?;
     pkgmgr::delete_pkg(cfg, &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
-    cleanup_files(&tmp_dir)?;
+    cleanup_files(cfg, &tmp_dir)?;
     mv_files_back(&tmp_dir, &path)?;
     Ok(())
 }
 
-fn cleanup_files(_tmp_dir: &TempDir) -> Result<()> {
+fn cleanup_files(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
     info!("cleaning files from unwanted properties");
+    for entry in WalkDir::new(tmp_dir.path().join("jcr_root"))
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|e| is_xml_file(e))
+    {
+        debug!("cleaning file {}", entry.path().display());
+        let mut file = File::open(entry.path())?;
+        let reader = BufReader::new(&mut file);
+        let lines: Vec<_> = reader
+            .lines()
+            .map(|l| l.expect("could not read line"))
+            .filter_map(|l| allowed_prop(l, &cfg.ignore_properties))
+            .collect();
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(entry.path())?;
+        debug!("writing cleaned lines back to file");
+        for line in lines {
+            file.write_all(line.as_bytes())?;
+        }
+    }
+
     Ok(())
+}
+
+fn is_xml_file(e: &DirEntry) -> bool {
+    is_file(e) && is_xml(e)
+}
+
+fn is_file(e: &DirEntry) -> bool {
+    let is_file = e.path().is_file();
+    debug!(
+        "{} {} a file",
+        e.path().display(),
+        if is_file { "is" } else { "is not" }
+    );
+    is_file
+}
+
+fn is_xml(e: &DirEntry) -> bool {
+    let is_xml = e.path().ends_with(".content.xml");
+    debug!(
+        "{} {} xml file",
+        e.path().display(),
+        if is_xml { "is" } else { "is not" }
+    );
+    is_xml
+}
+
+fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[String]) -> Option<String> {
+    let line = line.into();
+    let mut result = true;
+    for ignore_prop in ignore_properties {
+        debug!("checking if {} contains {}", line, ignore_prop);
+        if line.contains(ignore_prop) {
+            debug!("line {} contains not allowed property, removing", line);
+            result = false;
+            break;
+        }
+    }
+    if result {
+        Some(format!("{}\n", line))
+    } else {
+        None
+    }
 }
 
 fn mv_files_back(tmp_dir: &TempDir, path: &Path) -> Result<()> {

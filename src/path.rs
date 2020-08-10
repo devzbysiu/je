@@ -33,7 +33,7 @@ impl Path {
     pub(crate) fn parent_from_root(&self) -> Result<String> {
         let parent = OsPath::new(&self.full())
             .parent()
-            .unwrap_or(OsPath::new("/"))
+            .unwrap_or_else(|| OsPath::new("/"))
             .display()
             .to_string();
         let parts: Vec<&str> = parent.split("jcr_root").collect();

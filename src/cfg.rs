@@ -6,7 +6,7 @@ use std::path::Path;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub(crate) struct Cfg {
-    ignore_properties: Vec<String>,
+    pub(crate) ignore_properties: Vec<String>,
     pub(crate) instance: Instance,
 }
 
