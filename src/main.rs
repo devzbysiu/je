@@ -8,6 +8,7 @@ use structopt::StructOpt;
 
 mod cfg;
 mod cmd;
+mod fsops;
 mod path;
 mod pkg;
 mod pkgdir;
