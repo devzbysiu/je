@@ -82,6 +82,9 @@ downloading the content
 
 `pass` - password used to authenticate to AEM instance
 
+### IntelliJ Configuration
+
+-- TODO
 
 # <p id="license">License</p>
 
