@@ -98,27 +98,31 @@ pub(crate) fn install_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn delete_pkg(cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
-    info!(
-        "deleting pkg {} on instance: {}",
-        pkg.path(),
-        cfg.instance.addr
-    );
-    let client = Client::new();
-    let resp = client
-        .post(&format!(
-            "{}/crx/packmgr/service/.json/etc/packages/{}?cmd=delete",
-            cfg.instance.addr,
-            pkg.path()
-        ))
-        .header(
-            "Authorization",
-            format!(
-                "Basic {}",
-                encode(format!("{}:{}", cfg.instance.user, cfg.instance.pass))
-            ),
-        )
-        .send()?;
-    debug!("delete pkg response: {:#?}", resp);
+pub(crate) fn delete_pkg(debug: bool, cfg: &Cfg, pkg: &pkgdir::Pkg) -> Result<()> {
+    if debug {
+        info!("package deletion omitted because of passed flag");
+    } else {
+        info!(
+            "deleting pkg {} on instance: {}",
+            pkg.path(),
+            cfg.instance.addr
+        );
+        let client = Client::new();
+        let resp = client
+            .post(&format!(
+                "{}/crx/packmgr/service/.json/etc/packages/{}?cmd=delete",
+                cfg.instance.addr,
+                pkg.path()
+            ))
+            .header(
+                "Authorization",
+                format!(
+                    "Basic {}",
+                    encode(format!("{}:{}", cfg.instance.user, cfg.instance.pass))
+                ),
+            )
+            .send()?;
+        debug!("delete pkg response: {:#?}", resp);
+    }
     Ok(())
 }

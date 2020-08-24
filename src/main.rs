@@ -35,8 +35,8 @@ fn main() -> Result<()> {
     debug!("read config: {:#?}", cfg);
     match opt.cmd {
         Cmd::Init => cmd::init()?,
-        Cmd::Get { path } => cmd::get(&cfg, &Path::new(path))?,
-        Cmd::Put { path } => cmd::put(&cfg, &Path::new(path))?,
+        Cmd::Get { path } => cmd::get(opt.debug, &cfg, &Path::new(path))?,
+        Cmd::Put { path } => cmd::put(opt.debug, &cfg, &Path::new(path))?,
     }
     Ok(())
 }

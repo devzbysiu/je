@@ -22,9 +22,15 @@ use tempfile::TempDir;
     about = "Jcr Exchange - easy download and upload files to and from JCR"
 )]
 pub(crate) struct Opt {
-    /// Enables INFO logs
+    /// Enables logs:
+    /// -v - enables INFO log level
+    /// -vv - enables DEBUG log level
     #[structopt(short, long, parse(from_occurrences))]
     pub(crate) verbose: u8,
+    /// If enabled, deployed to AEM packages are left intact (are not deleted) to allow
+    /// investigation
+    #[structopt(short, long)]
+    pub(crate) debug: bool,
     #[structopt(subcommand)]
     pub(crate) cmd: Cmd,
 }
@@ -56,7 +62,7 @@ pub(crate) fn init() -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn get(cfg: &Cfg, path: &Path) -> Result<()> {
+pub(crate) fn get(debug: bool, cfg: &Cfg, path: &Path) -> Result<()> {
     info!("executing 'get {}'", path.full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mk(&path, &pkg)?;
@@ -66,14 +72,14 @@ pub(crate) fn get(cfg: &Cfg, path: &Path) -> Result<()> {
     thread::sleep(Duration::from_millis(100));
     pkgdir::clean(&tmp_dir)?;
     pkgmgr::download_pkg(cfg, &tmp_dir, &pkg)?;
-    pkgmgr::delete_pkg(cfg, &pkg)?;
+    pkgmgr::delete_pkg(debug, cfg, &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
     fsops::cleanup_files(cfg, &tmp_dir)?;
     fsops::mv_files_back(&tmp_dir, &path)?;
     Ok(())
 }
 
-pub(crate) fn put(cfg: &Cfg, path: &Path) -> Result<()> {
+pub(crate) fn put(debug: bool, cfg: &Cfg, path: &Path) -> Result<()> {
     info!("executing 'put {}'", path.full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mk(path, &pkg)?;
@@ -81,7 +87,7 @@ pub(crate) fn put(cfg: &Cfg, path: &Path) -> Result<()> {
     pkg::zip_pkg(&tmp_dir)?;
     pkgmgr::upload_pkg(cfg, &tmp_dir)?;
     pkgmgr::install_pkg(cfg, &pkg)?;
-    pkgmgr::delete_pkg(cfg, &pkg)?;
+    pkgmgr::delete_pkg(debug, cfg, &pkg)?;
     Ok(())
 }
 
