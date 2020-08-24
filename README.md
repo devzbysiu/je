@@ -42,8 +42,7 @@
 
 Small utility for uploading/downloading content to/from running AEM instance.
 
-**It's intended to be used as an external tool for IntelliJ IDEA to allow to easily synchronize
-content.**
+**It's intended to be used as an external tool for IntelliJ IDEA to allow synchronizing content.**
 
 ```bash
 ❯ je
