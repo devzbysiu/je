@@ -97,6 +97,8 @@ fn normalize<S: Into<String>>(path: S) -> String {
         .replace("_social_", "social:")
         .replace(".content.xml", "")
         .replace(".xml", "")
+        // windows
+        .replace("\\", "/")
 }
 
 fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
@@ -308,6 +310,21 @@ mod test {
                 "/content/jcr:content/",
             ),
             ("/content/_jcr_content.xml", "/content/jcr:content"),
+            // Windows
+            ("\\content\\_jcr_content", "/content/jcr:content"),
+            ("\\content\\_rep_policy", "/content/rep:policy"),
+            ("\\content\\_oak_root", "/content/oak:root"),
+            ("\\content\\_sling_order", "/content/sling:order"),
+            ("\\content\\_granite_var", "/content/granite:var"),
+            ("\\content\\_cq_dialog", "/content/cq:dialog"),
+            ("\\content\\_dam_asset", "/content/dam:asset"),
+            ("\\content\\_exif_fi", "/content/exif:fi"),
+            ("\\content\\_social_media", "/content/social:media"),
+            (
+                "\\content\\_jcr_content\\.content.xml",
+                "/content/jcr:content/",
+            ),
+            ("\\content\\_jcr_content.xml", "/content/jcr:content"),
         ];
 
         // then
