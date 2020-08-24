@@ -42,23 +42,33 @@
 
 Small utility for uploading/downloading content to/from running AEM instance.
 
-It's intended to be used as an external tool for IntelliJ Idea to allow to easily synchronize
-content.
+**It's intended to be used as an external tool for IntelliJ IDEA to allow to easily synchronize
+content.**
+
+--- TODO: put je cli output here ---
 
 # <p id="installation">Installation</p>
 
--- TODO: add more installation options
-
-Rust programmers:
+### Rust programmers:
 ```bash
 cargo install je
 ```
+
+### Linux users:
+- got to [releases](https://github.com/devzbysiu/je/releases) page
+- download the latest Linux executable
+- put it into your PATH variable
+
+### Windows users:
+- got to [releases](https://github.com/devzbysiu/je/releases) page
+- download the latest Windows executable
+- put it into your PATH variable
 
 # <p id="configuration">Configuration</p>
 
 ### Default
 Configuration file is **not** required. Without it, `je` will use default configuration.
-However, you can still initialize config and change it. The default configuration is the initial
+However, you can still initialize config and change it. The default configuration is also the initial
 one:
 
 ```bash
@@ -71,7 +81,6 @@ addr = "http://localhost:4502"
 user = "admin"
 pass = "admin"
 ```
-
 ### Customize
 `ignore_properties` - tell `je` which properties of `.content.xml` should be removed after
 downloading the content
@@ -82,9 +91,36 @@ downloading the content
 
 `pass` - password used to authenticate to AEM instance
 
-### IntelliJ Configuration
+### IntelliJ Setup
 
--- TODO
+#### Add `je` commands:
+
+1. Go to `Settings -> Tools -> External Tools`.
+2. Add new external tool using `+` sign.
+3. Configure the tool like on the screenshot below.
+
+![je get configuration](./res/je-get.png)
+
+Similarly add and configure `je put` command:
+
+![je get configuration](./res/je-put.png)
+
+
+##### Notes
+- if you don't have `je` in PATH, you can set full path in `Program` input
+- `Arguments` input:
+  - `-vv` - sets verbose level, `-vv` means DEBUG log level, `-v` means INFO log level, you can omit
+    this option if you don't need logs
+  - you can add `-d` to set debug mode in which temporary packages uploaded to AEM won't be deleted
+    to allow validation during debugging
+  - for more options run `je` in command line
+  - subcommand (put or get)
+  - `$FilePath$` - IntelliJ variable which will be substituted during command execution, its absolute
+    path to a file on which command is executed
+
+#### Configure keyboard mappings
+
+--- TODO ---
 
 # <p id="license">License</p>
 
