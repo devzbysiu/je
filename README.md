@@ -45,7 +45,27 @@ Small utility for uploading/downloading content to/from running AEM instance.
 **It's intended to be used as an external tool for IntelliJ IDEA to allow to easily synchronize
 content.**
 
---- TODO: put je cli output here ---
+```bash
+❯ je
+je 0.1.0
+Jcr Exchange - easy download and upload files to and from JCR
+
+USAGE:
+    je [FLAGS] <SUBCOMMAND>
+
+FLAGS:
+    -d, --debug      If enabled, deployed to AEM packages are left intact (are not deleted) to allow investigation
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+    -v, --verbose    Enables logs: -v - enables INFO log level -vv - enables DEBUG log level
+
+SUBCOMMANDS:
+    get     Download content to local file system
+    help    Prints this message or the help of the given subcommand(s)
+    init
+    put     Upload content to AEM instance
+
+```
 
 # <p id="installation">Installation</p>
 
