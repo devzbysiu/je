@@ -18,9 +18,6 @@
     <a href="https://crates.io/crates/je">
       <img src="https://img.shields.io/crates/l/je?style=for-the-badge" alt="License"/>
     </a>
-    <a href="https://docs.rs/je">
-      <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=for-the-badge" alt="docs.rs docs" />
-    </a>
   </p>
 
   <h3>
