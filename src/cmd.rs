@@ -47,6 +47,7 @@ pub(crate) enum Cmd {
         /// path to upload
         path: String,
     },
+    /// Initialize configuration file
     Init,
 }
 
