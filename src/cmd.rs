@@ -37,17 +37,17 @@ pub(crate) struct Opt {
 
 #[derive(Debug, StructOpt)]
 pub(crate) enum Cmd {
-    /// Download content to local file system
+    /// Downloads content to local file system
     Get {
         /// path to download
         path: String,
     },
-    /// Upload content to AEM instance
+    /// Uploads content to AEM instance
     Put {
         /// path to upload
         path: String,
     },
-    /// Initialize configuration file
+    /// Initializes configuration file
     Init,
 }
 

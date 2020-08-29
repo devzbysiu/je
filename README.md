@@ -56,11 +56,10 @@ FLAGS:
     -v, --verbose    Enables logs: -v - enables INFO log level -vv - enables DEBUG log level
 
 SUBCOMMANDS:
-    get     Download content to local file system
+    get     Downloads content to local file system
     help    Prints this message or the help of the given subcommand(s)
-    init
-    put     Upload content to AEM instance
-
+    init    Initializes configuration file
+    put     Uploads content to AEM instance
 ```
 
 # <p id="installation">Installation</p>
@@ -133,10 +132,6 @@ Similarly add and configure `je put` command:
   - subcommand (put or get)
   - `$FilePath$` - IntelliJ variable which will be substituted during command execution, its absolute
     path to a file on which command is executed
-
-#### Configure keyboard mappings
-
---- TODO ---
 
 # <p id="license">License</p>
 
