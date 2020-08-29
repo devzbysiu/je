@@ -118,7 +118,7 @@ downloading the content
 
 Similarly add and configure `je put` command:
 
-![je get configuration](./res/je-put.png)
+![je put configuration](./res/je-put.png)
 
 
 ##### Notes
