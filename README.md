@@ -70,12 +70,12 @@ cargo install je
 ```
 
 ### Linux users:
-- got to [releases](https://github.com/devzbysiu/je/releases) page
+- go to [releases](https://github.com/devzbysiu/je/releases) page
 - download the latest Linux executable
 - put it into your PATH variable
 
 ### Windows users:
-- got to [releases](https://github.com/devzbysiu/je/releases) page
+- go to [releases](https://github.com/devzbysiu/je/releases) page
 - download the latest Windows executable
 - put it into your PATH variable
 
