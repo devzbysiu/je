@@ -8,6 +8,7 @@ on:
     branches: [ master ]
 
 jobs:
+
   linuxbuild:
     runs-on: ubuntu-latest
     name: Linux
@@ -45,5 +46,25 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: ./target/release/je.exe
         asset_name: je_windows_x86_64.exe
+        tag: ${{ github.ref }}
+        overwrite: true
+
+  macosbuild:
+    runs-on: macos-latest
+    name: MacOS
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Build binary
+      run: cargo build --release
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./target/release/je
+        asset_name: je_macos_x86_64
         tag: ${{ github.ref }}
         overwrite: true
