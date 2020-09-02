@@ -17,6 +17,14 @@
 name = "je"
 version = "0.1.0"
 authors = ["Bartosz Zbytniewski <bartosz.zbytniewski.dev@gmail.com>"]
+description = "Allows to upload and download content to and from AEM instance"
+keywords = ["AEM", "content"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+categories = ["command-line-utilities"]
+repository = "https://github.com/devzbysiu/je"
+homepage = "https://github.com/devzbysiu/je"
+documentation = "https://docs.rs/je"
 edition = "2018"
 
 [dependencies]
