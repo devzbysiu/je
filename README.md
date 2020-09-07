@@ -64,22 +64,16 @@ SUBCOMMANDS:
 
 # <p id="installation">Installation</p>
 
+### Standard installation
+- go to [releases](https://github.com/devzbysiu/je/releases) page
+- download the latest `je` archive for your OS
+- extract it
+- include path to `je` executable into your PATH variable
+
 ### Rust programmers:
 ```bash
 cargo install je
 ```
-
-### Linux users:
-- go to [releases](https://github.com/devzbysiu/je/releases) page
-- download the latest Linux archive
-- extract it
-- include path to `je` executable into your PATH variable
-
-### Windows users:
-- go to [releases](https://github.com/devzbysiu/je/releases) page
-- download the latest Windows executable
-- extract it
-- include path to `je` executable into your PATH variable
 
 # <p id="configuration">Configuration</p>
 
