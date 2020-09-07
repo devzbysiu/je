@@ -82,7 +82,7 @@ Configuration file is **not** required. Without it, `je` will use default config
 However, you can still initialize config and change it. The default configuration is also the initial
 one:
 
-```bash
+```
 $ je init
 $ cat .je
 ignore_properties = []
