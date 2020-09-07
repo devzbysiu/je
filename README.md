@@ -71,13 +71,15 @@ cargo install je
 
 ### Linux users:
 - go to [releases](https://github.com/devzbysiu/je/releases) page
-- download the latest Linux executable
-- put it into your PATH variable
+- download the latest Linux archive
+- extract it
+- include path to `je` executable into your PATH variable
 
 ### Windows users:
 - go to [releases](https://github.com/devzbysiu/je/releases) page
 - download the latest Windows executable
-- put it into your PATH variable
+- extract it
+- include path to `je` executable into your PATH variable
 
 # <p id="configuration">Configuration</p>
 
