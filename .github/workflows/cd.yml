@@ -7,8 +7,8 @@ on:
 
 jobs:
   publish:
-    name: Publishing for {{ "${{ matrix.os " }}}}
-    runs-on: {{ "${{ matrix.os " }}}}
+    name: Publishing for ${{ matrix.os  }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
@@ -31,7 +31,7 @@ jobs:
       - name: Installing Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: {{ "${{ matrix.rust " }}}}
+          toolchain: ${{ matrix.rust }}
           override: true
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -39,26 +39,26 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          toolchain: {{ "${{ matrix.rust " }}}}
-          args: --release --target {{ "${{ matrix.target " }}}}
+          toolchain: ${{ matrix.rust }}
+          args: --release --target ${{ matrix.target }}
 
       - name: Packaging final binary
         shell: bash
         run: |
-          cd target/{{ "${{ matrix.target " }}}}/release
-          strip je{{ "${{ matrix.binary_postfix " }}}}
-          tar czvf je-{{ "${{ matrix.artifact_prefix " }}}}.tar.gz je-{{ "${{ matrix.binary_postfix " }}}}
+          cd target/${{ matrix.target }}/release
+          strip je${{ matrix.binary_postfix }}
+          tar czvf je-${{ matrix.artifact_prefix }}.tar.gz je${{ matrix.binary_postfix }}
 
-          if [[ {{ "${{ runner.os " }}}} == 'Windows' ]]; then
-            certutil -hashfile je-{{ "${{ matrix.artifact_prefix " }}}}.tar.gz sha256 | grep -E [A-Fa-f0-9]{64} > je-{{ "${{ matrix.artifact_prefix " }}}}.sha256
+          if [[ ${{ runner.os }} == 'Windows' ]]; then
+            certutil -hashfile je-${{ matrix.artifact_prefix }}.tar.gz sha256 | grep -E [A-Fa-f0-9]{64} > je-${{ matrix.artifact_prefix }}.sha256
           else
-            shasum -a 256 je-{{ "${{ matrix.artifact_prefix " }}}}.tar.gz > je-{{ "${{ matrix.artifact_prefix " }}}}.sha256
+            shasum -a 256 je-${{ matrix.artifact_prefix }}.tar.gz > je-${{ matrix.artifact_prefix }}.sha256
           fi
       - name: Releasing assets
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            target/{{ "${{ matrix.target " }}}}/release/je-{{ "${{ matrix.artifact_prefix " }}}}.tar.gz
-            target/{{ "${{ matrix.target " }}}}/release/je-{{ "${{ matrix.artifact_prefix " }}}}.sha256
+            target/${{ matrix.target }}/release/je-${{ matrix.artifact_prefix }}.tar.gz
+            target/${{ matrix.target }}/release/je-${{ matrix.artifact_prefix }}.sha256
         env:
-          GITHUB_TOKEN: {{ "${{ secrets.GITHUB_TOKEN " }}}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
