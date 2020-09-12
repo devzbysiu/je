@@ -44,7 +44,7 @@ If the required subsection does not exist yet under **Unreleased**, create it!
 
 ### Set up
 
-This is no different than other Rust projects.
+Download the project.
 
 ```shell
 git clone https://github.com/devzbysiu/je
@@ -52,7 +52,20 @@ cd je
 cargo build
 ```
 
+Install [cargo-make](https://github.com/sagiegurari/cargo-make). It's a task runner for rust.
+It's used on CI so it's easier to make reproducible builds locally.
+
+```shell
+cargo install cargo-make
+```
+
 ### Useful Commands
+
+- Run set of actions executed on CI:
+
+  ```shell
+  cargo make all
+  ```
 
 - Build and run release version:
 
@@ -69,7 +82,7 @@ cargo build
 - Run all tests:
 
   ```shell
-  cargo test --all
+  cargo make test
   ```
 
 - Check to see if there are code formatting issues
