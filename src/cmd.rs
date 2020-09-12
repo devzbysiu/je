@@ -27,10 +27,12 @@ pub(crate) struct Opt {
     /// -vv - enables DEBUG log level
     #[structopt(short, long, parse(from_occurrences))]
     pub(crate) verbose: u8,
+
     /// If enabled, deployed to AEM packages are left intact (are not deleted) to allow
     /// investigation
     #[structopt(short, long)]
     pub(crate) debug: bool,
+
     #[structopt(subcommand)]
     pub(crate) cmd: Cmd,
 }

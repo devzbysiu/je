@@ -1,6 +1,5 @@
 # When releasing to crates.io:
 #
-# - last check for all TODO, FIXME, expect, unwrap.
 # - re-read and final polish of documentation
 # - run cargo udeps
 # - run cargo clippy
