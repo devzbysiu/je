@@ -83,8 +83,8 @@ However, you can still initialize config and change it. The default configuratio
 one:
 
 ```
-$ je init
-$ cat .je
+❯ je init
+❯ cat .je
 ignore_properties = []
 
 [instance]
