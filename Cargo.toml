@@ -1,30 +1,16 @@
-# When releasing to crates.io:
-#
-# - re-read and final polish of documentation
-# - run cargo udeps
-# - run cargo clippy
-# - recheck log statements (informative, none left that were just for development, ...)
-# - Update CHANGELOG.md.
-# - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
-# - verify CI result
-# - run cargo test on dependent crates
-# - cargo publish
-# - merge dev branch into master
-# - create git tag with version number
-#
 [package]
 name = "je"
 version = "0.1.0"
 authors = ["Bartosz Zbytniewski <bartosz.zbytniewski.dev@gmail.com>"]
+edition = "2018"
 description = "Allows to upload and download content to and from AEM instance"
-keywords = ["AEM", "content"]
+repository = "https://github.com/devzbysiu/je"
 license = "MIT/Apache-2.0"
 readme = "README.md"
+keywords = ["AEM", "content"]
 categories = ["command-line-utilities"]
-repository = "https://github.com/devzbysiu/je"
 homepage = "https://github.com/devzbysiu/je"
 documentation = "https://docs.rs/je"
-edition = "2018"
 
 [dependencies]
 log = "0.4"
