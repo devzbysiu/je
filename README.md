@@ -70,7 +70,7 @@ SUBCOMMANDS:
 - extract it
 - include path to `je` executable into your PATH variable
 
-### Rust programmers:
+### Rust programmers
 ```bash
 cargo install je
 ```
