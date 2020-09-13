@@ -1,3 +1,4 @@
 /target
 .blinc
 .development.env
+cobertura.xml
