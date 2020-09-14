@@ -89,19 +89,39 @@ pub(crate) fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
 mod test {
     use super::*;
     use anyhow::Result;
-    use std::path::Path;
+    use std::fs::{create_dir, rename, File};
+    use std::path::{Path, PathBuf};
     use tempfile::TempDir;
 
     #[test]
     fn test_zip_pkg() -> Result<()> {
+        pretty_env_logger::try_init()?;
         // given
         let tmp_dir = TempDir::new()?;
+        let target_dir = TempDir::new()?;
+        create_dir(tmp_dir.path().join("jcr_root"))?;
+        File::create(jcr_root_file(&tmp_dir, "file1"))?;
+        File::create(jcr_root_file(&tmp_dir, "file2"))?;
+        File::create(jcr_root_file(&tmp_dir, "file3"))?;
 
         // when
         zip_pkg(&tmp_dir)?;
 
         // then
         assert_eq!(Path::new(&tmp_dir.path().join("pkg.zip")).exists(), true);
+        rename(
+            Path::new(&tmp_dir.path().join("pkg.zip")),
+            Path::new(&target_dir.path().join("res.zip")),
+        )?;
+        unzip_pkg(&target_dir)?;
+        assert_eq!(jcr_root_file(&target_dir, "file1").exists(), true);
+        assert_eq!(jcr_root_file(&target_dir, "file2").exists(), true);
+        assert_eq!(jcr_root_file(&target_dir, "file2").exists(), true);
         Ok(())
+    }
+
+    fn jcr_root_file<S: Into<String>>(dir: &TempDir, name: S) -> PathBuf {
+        let path = format!("jcr_root/{}", name.into());
+        Path::new(&dir.path().join(path)).to_path_buf()
     }
 }
