@@ -129,7 +129,7 @@ Similarly add and configure `je put` command:
   - `$FilePath$` - IntelliJ variable which will be substituted during command execution, its absolute
     path to a file on which command is executed
 - `Working directory` input:
-  - set to `$ProjectFileDir$` allows to run `je` from the project root
+  - set to `$ProjectFileDir$` allows running `je` from the project root
   - keep in mind that `je` will try to read config file from the set working directory
 
 # <p id="license">License</p>
