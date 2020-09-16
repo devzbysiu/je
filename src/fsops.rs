@@ -176,10 +176,10 @@ mod test {
         let entry = Entry::from(tmpfile.path());
 
         // when
-        let is_xml_file = entry.is_file();
+        let is_file = entry.is_file();
 
         // then
-        assert_eq!(is_xml_file, true);
+        assert_eq!(is_file, true);
 
         Ok(())
     }
@@ -191,28 +191,10 @@ mod test {
         let entry = Entry::from(tmpdir.path());
 
         // when
-        let is_xml_file = entry.is_file();
+        let is_file = entry.is_file();
 
         // then
-        assert_eq!(is_xml_file, false);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_is_content_xml_with_xml_file() -> Result<()> {
-        // given
-        let tmpdir = TempDir::new()?;
-        let xml_filepath = tmpdir.path().join(".content.xml");
-        let mut file = File::create(&xml_filepath)?;
-        file.write_all(b"test_content")?;
-        let entry = Entry::from(xml_filepath.as_path());
-
-        // when
-        let is_xml = entry.is_content_xml();
-
-        // then
-        assert_eq!(is_xml, true);
+        assert_eq!(is_file, false);
 
         Ok(())
     }
@@ -231,6 +213,24 @@ mod test {
 
         // then
         assert_eq!(is_xml, false);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_xml_with_xml_file() -> Result<()> {
+        // given
+        let tmpdir = TempDir::new()?;
+        let xml_filepath = tmpdir.path().join(".content.xml");
+        let mut file = File::create(&xml_filepath)?;
+        file.write_all(b"test_content")?;
+        let entry = Entry::from(xml_filepath.as_path());
+
+        // when
+        let is_xml = entry.is_xml_file();
+
+        // then
+        assert_eq!(is_xml, true);
 
         Ok(())
     }
