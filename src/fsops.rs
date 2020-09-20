@@ -142,7 +142,7 @@ fn list_files<P: AsRef<OsPath>>(path: P) {
 mod test {
     use super::*;
     use std::fs::create_dir_all;
-    use std::fs::File;
+    use std::fs::{read_to_string, File};
     use tempfile::{NamedTempFile, TempDir};
 
     #[test]
@@ -290,6 +290,73 @@ mod test {
                 .join("jcr_root/some-dir/some-file")
                 .exists(),
             true
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_cleanup_files() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
+        // given
+        let cfg = Cfg {
+            ignore_properties: vec!["property-to-ignore".into()],
+            ..Cfg::default()
+        };
+        let tmp_dir = TempDir::new()?;
+        create_dir_all(tmp_dir.path().join("jcr_root"))?;
+        let mut file = File::create(tmp_dir.path().join("jcr_root/.content.xml"))?;
+        file.write_all(
+            r#"some-property
+property-to-ignore
+other-property"#
+                .as_bytes(),
+        )?;
+
+        // when
+        cleanup_files(&cfg, &tmp_dir)?;
+
+        // then
+        let content = read_to_string(tmp_dir.path().join("jcr_root/.content.xml"))?;
+
+        assert_eq!(
+            content,
+            r#"some-property
+other-property
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_cleanup_files_without_ignoring_properties() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
+        // given
+        let cfg = Cfg {
+            ignore_properties: vec![],
+            ..Cfg::default()
+        };
+        let tmp_dir = TempDir::new()?;
+        create_dir_all(tmp_dir.path().join("jcr_root"))?;
+        let mut file = File::create(tmp_dir.path().join("jcr_root/.content.xml"))?;
+        file.write_all(
+            r#"some-property
+property
+other-property"#
+                .as_bytes(),
+        )?;
+
+        // when
+        cleanup_files(&cfg, &tmp_dir)?;
+
+        // then
+        let content = read_to_string(tmp_dir.path().join("jcr_root/.content.xml"))?;
+
+        assert_eq!(
+            content,
+            r#"some-property
+property
+other-property
+"#
         );
         Ok(())
     }

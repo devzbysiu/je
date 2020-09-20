@@ -95,7 +95,7 @@ mod test {
 
     #[test]
     fn test_zip_pkg() -> Result<()> {
-        pretty_env_logger::try_init()?;
+        let _ = pretty_env_logger::try_init();
         // given
         let tmp_dir = TempDir::new()?;
         let target_dir = TempDir::new()?;
