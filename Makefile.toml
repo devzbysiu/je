@@ -20,6 +20,11 @@ args = ["clippy", "--all-targets", "--all-features", "--", "-W", "clippy::pedant
 command = "cargo"
 args = ["build", "--release"]
 
+[tasks.coverage]
+clear = true
+command = "cargo"
+args = ["tarpaulin", "--ignore-tests"]
+
 [tasks.all]
 dependencies = [
     "format",
