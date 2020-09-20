@@ -18,7 +18,8 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
+          ./target
+          !./target/tarpaulin
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Run cargo-make
