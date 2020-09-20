@@ -141,6 +141,7 @@ fn list_files<P: AsRef<OsPath>>(path: P) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::fs::create_dir_all;
     use std::fs::File;
     use tempfile::{NamedTempFile, TempDir};
 
@@ -232,6 +233,64 @@ mod test {
         // then
         assert_eq!(is_xml, true);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_mv_files_back_with_regular_file() -> Result<()> {
+        // given
+        let src_dir = TempDir::new()?;
+        create_dir_all(src_dir.path().join("jcr_root"))?;
+        File::create(src_dir.path().join("jcr_root/some-file"))?;
+
+        let target_dir = TempDir::new()?;
+        create_dir_all(target_dir.path().join("jcr_root"))?;
+
+        let path = Path::new(
+            target_dir
+                .path()
+                .join("jcr_root/some-file")
+                .to_str()
+                .unwrap(),
+        );
+
+        // when
+        mv_files_back(&src_dir, &path)?;
+
+        // then
+        assert_eq!(target_dir.path().join("jcr_root/some-file").exists(), true);
+        Ok(())
+    }
+
+    #[test]
+    fn test_mv_files_back_with_directory() -> Result<()> {
+        // given
+        let src_dir = TempDir::new()?;
+        create_dir_all(src_dir.path().join("jcr_root/some-dir"))?;
+        File::create(src_dir.path().join("jcr_root/some-dir/some-file"))?;
+
+        let target_dir = TempDir::new()?;
+        create_dir_all(target_dir.path().join("jcr_root/some-dir"))?;
+
+        let path = Path::new(
+            target_dir
+                .path()
+                .join("jcr_root/some-dir")
+                .to_str()
+                .unwrap(),
+        );
+
+        // when
+        mv_files_back(&src_dir, &path)?;
+
+        // then
+        assert_eq!(
+            target_dir
+                .path()
+                .join("jcr_root/some-dir/some-file")
+                .exists(),
+            true
+        );
         Ok(())
     }
 }
