@@ -29,9 +29,6 @@ args = ["tarpaulin", "--ignore-tests", "-v", "--out", "Xml"]
 dependencies = [
     "format",
     "clippy",
-    "build",
-    "test",
-    "coverage-flow",
     "codecov-flow"
 ]
 
