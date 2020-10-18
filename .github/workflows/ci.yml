@@ -32,3 +32,8 @@ jobs:
       run: cargo make --profile ci all
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: codecov
+        path: ./target/tarpaulin/coverage.json
