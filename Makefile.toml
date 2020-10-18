@@ -23,7 +23,7 @@ args = ["build", "--release"]
 [tasks.coverage]
 clear = true
 command = "cargo"
-args = ["tarpaulin", "--ignore-tests"]
+args = ["tarpaulin", "--ignore-tests", "-v", "--out", "Xml"]
 
 [tasks.all]
 dependencies = [
