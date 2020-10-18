@@ -1,6 +1,6 @@
 [package]
 name = "je"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Bartosz Zbytniewski <bartosz.zbytniewski.dev@gmail.com>"]
 edition = "2018"
 description = "Allows to upload and download content to and from AEM instance"

@@ -154,7 +154,8 @@ mod test {
             cfg_content,
             r#"ignore_properties = []
 
-[instance]
+[[profile]]
+name = "author"
 addr = "http://localhost:4502"
 user = "admin"
 pass = "admin"
@@ -182,7 +183,8 @@ pass = "admin"
             cfg_content,
             r#"ignore_properties = []
 
-[instance]
+[[profile]]
+name = "author"
 addr = "http://localhost:4502"
 user = "admin"
 pass = "admin"

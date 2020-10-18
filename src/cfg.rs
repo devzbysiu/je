@@ -134,8 +134,8 @@ pass = "pass1"
         let expected_profiles = vec![Instance {
             name: "author".into(),
             addr: "http://localhost:4502".into(),
-            user: "user1".into(),
-            pass: "pass1".into(),
+            user: "admin".into(),
+            pass: "admin".into(),
         }];
 
         // then
