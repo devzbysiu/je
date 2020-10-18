@@ -13,14 +13,14 @@ jobs:
     - name: Checkout Repo
       uses: actions/checkout@v2
 
-    # - uses: actions/cache@v2
-    #   with:
-    #     path: |
-    #       ~/.cargo/registry
-    #       ~/.cargo/git
-    #       ./target
-    #       !./target/tarpaulin
-    #     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ./target
+          !./target/tarpaulin
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Run cargo-make
       uses: actions-rs/toolchain@v1
@@ -32,8 +32,3 @@ jobs:
       run: cargo make --profile ci all
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: codecov
-        path: ./target/tarpaulin/coverage.json
