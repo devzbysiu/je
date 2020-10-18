@@ -42,17 +42,20 @@ Small utility for uploading/downloading content to/from running AEM instance.
 
 ```bash
 ❯ je
-je 0.1.0
+je 0.2.0
 Jcr Exchange - easy download and upload files to and from JCR
 
 USAGE:
-    je [FLAGS] <SUBCOMMAND>
+    je [FLAGS] [OPTIONS] <SUBCOMMAND>
 
 FLAGS:
     -d, --debug      If enabled, deployed to AEM packages are left intact (are not deleted) to allow investigation
     -h, --help       Prints help information
     -V, --version    Prints version information
     -v, --verbose    Enables logs: -v - enables INFO log level -vv - enables DEBUG log level
+
+OPTIONS:
+    -p, --profile <profile>    Profile selection
 
 SUBCOMMANDS:
     get     Downloads content to local file system
@@ -86,20 +89,24 @@ one:
 ❯ cat .je
 ignore_properties = []
 
-[instance]
+[[profile]]
+name = "author"
 addr = "http://localhost:4502"
 user = "admin"
 pass = "admin"
 ```
 ### Customize
-`ignore_properties` - tell `je` which properties of `.content.xml` should be removed after
-downloading the content
+- general:
+  - `ignore_properties` - tell `je` which properties of `.content.xml` should be removed after
+downloading the content; it uses `contains` method to match lines to be removed
 
-`addr` - address of the instance, including port if domain is not available
+- profile section - you can add multiple profiles, each with settings:
+  - `name` - name of the profile, later it can be used with `--profile` option to specify which instance is the target; if not specified, the first profile from the config is used
+  - `addr` - address of the instance, including port if domain is not available
+  - `user` - user used to authenticate to AEM instance
+  - `pass` - password used to authenticate to AEM instance
 
-`user` - user used to authenticate to AEM instance
 
-`pass` - password used to authenticate to AEM instance
 
 ### IntelliJ Setup
 
@@ -119,12 +126,11 @@ Similarly add and configure `je put` command:
 ##### Notes
 - if you don't have `je` in PATH, you can set full path in `Program` input
 - `Arguments` input:
-  - `-vv` - sets verbose level, `-vv` means DEBUG log level, `-v` means INFO log level, you can omit
-    this option if you don't need logs
-  - you can add `-d` to set debug mode in which temporary packages uploaded to AEM won't be deleted
-    to allow validation during debugging
-  - for more options run `je` in command line
-  - subcommand (put or get)
+  - `-vv` - sets verbose level, `-vv` means DEBUG log level, `-v` means INFO log level; it's optional
+  - `--profile` - sets target profile; if not provided, first profile from config will be used
+  - `-d` - sets debug mode in which temporary packages uploaded to AEM won't be deleted
+    to allow validation during debugging; it's optional
+  - subcommand (`put` or `get`)
   - `$FilePath$` - IntelliJ variable which will be substituted during command execution, its absolute
     path to a file on which command is executed
 - `Working directory` input:
