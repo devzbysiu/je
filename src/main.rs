@@ -1,11 +1,13 @@
 use crate::cfg::Cfg;
 use crate::cmd::{Cmd, Opt};
 use anyhow::Result;
+use args::{GetArgs, PutArgs};
 use log::{debug, info};
 use path::Path;
 use std::env;
 use structopt::StructOpt;
 
+mod args;
 mod cfg;
 mod cmd;
 mod fsops;
@@ -32,12 +34,32 @@ fn main() -> Result<()> {
     debug!("parsed opts: {:#?}", opt);
     debug!("current workiong dir: {:?}", env::current_dir());
     info!("starting");
-    let cfg = Cfg::load()?;
-    debug!("read config: {:#?}", cfg);
     match opt.cmd {
         Cmd::Init => cmd::init()?,
-        Cmd::Get { path } => cmd::get(opt.debug, &cfg, &Path::new(path))?,
-        Cmd::Put { path } => cmd::put(opt.debug, &cfg, &Path::new(path))?,
+        other => {
+            let cfg = Cfg::load()?;
+            debug!("read config: {:#?}", cfg);
+            match other {
+                Cmd::Get { path } => {
+                    let args = GetArgs {
+                        path: Path::new(path),
+                        instance: cfg.instance(opt.profile.as_ref()),
+                        debug: opt.debug,
+                        ignore_properties: cfg.ignore_properties,
+                    };
+                    cmd::get(args)?;
+                }
+                Cmd::Put { path } => {
+                    let args = PutArgs {
+                        path: Path::new(path),
+                        instance: cfg.instance(opt.profile.as_ref()),
+                        debug: opt.debug,
+                    };
+                    cmd::put(args)?
+                }
+                _ => unreachable!(),
+            }
+        }
     }
     Ok(())
 }

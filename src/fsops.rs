@@ -1,4 +1,3 @@
-use crate::cfg::Cfg;
 use crate::path::Path;
 use anyhow::Result;
 use log::{debug, info};
@@ -66,7 +65,7 @@ impl From<DirEntry> for Entry {
     }
 }
 
-pub(crate) fn cleanup_files(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
+pub(crate) fn cleanup_files(ignore_properties: &[String], tmp_dir: &TempDir) -> Result<()> {
     info!("cleaning files from unwanted properties");
     for entry in WalkDir::new(tmp_dir.path().join("jcr_root"))
         .into_iter()
@@ -79,7 +78,7 @@ pub(crate) fn cleanup_files(cfg: &Cfg, tmp_dir: &TempDir) -> Result<()> {
         let lines: Vec<_> = reader
             .lines()
             .map(|l| l.expect("could not read line"))
-            .filter_map(|l| allowed_prop(l, &cfg.ignore_properties))
+            .filter_map(|l| allowed_prop(l, ignore_properties))
             .collect();
 
         let mut file = OpenOptions::new()
@@ -298,10 +297,7 @@ mod test {
     fn test_cleanup_files() -> Result<()> {
         let _ = pretty_env_logger::try_init();
         // given
-        let cfg = Cfg {
-            ignore_properties: vec!["property-to-ignore".into()],
-            ..Cfg::default()
-        };
+        let ignore_properties = vec!["property-to-ignore".into()];
         let tmp_dir = TempDir::new()?;
         create_dir_all(tmp_dir.path().join("jcr_root"))?;
         let mut file = File::create(tmp_dir.path().join("jcr_root/.content.xml"))?;
@@ -313,7 +309,7 @@ other-property"#
         )?;
 
         // when
-        cleanup_files(&cfg, &tmp_dir)?;
+        cleanup_files(&ignore_properties, &tmp_dir)?;
 
         // then
         let content = read_to_string(tmp_dir.path().join("jcr_root/.content.xml"))?;
@@ -331,10 +327,7 @@ other-property
     fn test_cleanup_files_without_ignoring_properties() -> Result<()> {
         let _ = pretty_env_logger::try_init();
         // given
-        let cfg = Cfg {
-            ignore_properties: vec![],
-            ..Cfg::default()
-        };
+        let ignore_properties = vec![];
         let tmp_dir = TempDir::new()?;
         create_dir_all(tmp_dir.path().join("jcr_root"))?;
         let mut file = File::create(tmp_dir.path().join("jcr_root/.content.xml"))?;
@@ -346,7 +339,7 @@ other-property"#
         )?;
 
         // when
-        cleanup_files(&cfg, &tmp_dir)?;
+        cleanup_files(&ignore_properties, &tmp_dir)?;
 
         // then
         let content = read_to_string(tmp_dir.path().join("jcr_root/.content.xml"))?;

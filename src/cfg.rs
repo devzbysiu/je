@@ -5,10 +5,12 @@ use std::env;
 use std::fs::read_to_string;
 use std::path::Path;
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct Cfg {
     pub(crate) ignore_properties: Vec<String>,
-    pub(crate) instance: Instance,
+
+    #[serde(rename = "profile")]
+    pub(crate) profiles: Vec<Instance>,
 }
 
 impl Cfg {
@@ -21,10 +23,48 @@ impl Cfg {
             Ok(Cfg::default())
         }
     }
+
+    pub(crate) fn instance(&self, profile: Option<&String>) -> Instance {
+        let default_instance = Instance {
+            name: "author".to_string(),
+            addr: "http://localhost:4502".to_string(),
+            user: "admin".to_string(),
+            pass: "admin".to_string(),
+        };
+        match profile {
+            Some(name) => self
+                .profiles
+                .clone()
+                .into_iter()
+                .find(|p| p.name == *name)
+                .unwrap_or(default_instance),
+            None => self
+                .profiles
+                .clone()
+                .into_iter()
+                .next()
+                .unwrap_or(default_instance),
+        }
+    }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+impl Default for Cfg {
+    fn default() -> Self {
+        Self {
+            profiles: vec![Instance {
+                name: "author".into(),
+                addr: "http://localhost:4502".into(),
+                user: "admin".into(),
+                pass: "admin".into(),
+            }],
+            ignore_properties: vec![],
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub(crate) struct Instance {
+    pub(crate) name: String,
     pub(crate) addr: String,
     pub(crate) user: String,
     pub(crate) pass: String,
@@ -33,6 +73,7 @@ pub(crate) struct Instance {
 impl Default for Instance {
     fn default() -> Self {
         Self {
+            name: "author".into(),
             addr: "http://localhost:4502".into(),
             user: "admin".into(),
             pass: "admin".into(),
@@ -58,7 +99,8 @@ mod test {
         cfg_file.write_all(
             r#"ignore_properties = ["prop1", "prop2"]
 
-[instance]
+[[profile]]
+name = "author"
 addr = "http://localhost:4502"
 user = "user1"
 pass = "pass1"
@@ -66,14 +108,19 @@ pass = "pass1"
             .as_bytes(),
         )?;
 
+        let expected_profiles = vec![Instance {
+            name: "author".into(),
+            addr: "http://localhost:4502".into(),
+            user: "user1".into(),
+            pass: "pass1".into(),
+        }];
+
         // when
         let cfg = Cfg::load()?;
 
         // then
         assert_eq!(cfg.ignore_properties, vec!["prop1", "prop2"]);
-        assert_eq!(cfg.instance.addr, "http://localhost:4502");
-        assert_eq!(cfg.instance.user, "user1");
-        assert_eq!(cfg.instance.pass, "pass1");
+        assert_eq!(cfg.profiles, expected_profiles);
 
         env::set_current_dir(initial_dir)?;
         Ok(())
@@ -84,11 +131,16 @@ pass = "pass1"
         // when
         let cfg = Cfg::load()?;
 
+        let expected_profiles = vec![Instance {
+            name: "author".into(),
+            addr: "http://localhost:4502".into(),
+            user: "user1".into(),
+            pass: "pass1".into(),
+        }];
+
         // then
         assert_eq!(cfg.ignore_properties, Vec::<String>::new());
-        assert_eq!(cfg.instance.addr, "http://localhost:4502");
-        assert_eq!(cfg.instance.user, "admin");
-        assert_eq!(cfg.instance.pass, "admin");
+        assert_eq!(cfg.profiles, expected_profiles);
 
         Ok(())
     }
