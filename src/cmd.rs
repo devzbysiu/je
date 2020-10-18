@@ -70,7 +70,7 @@ pub(crate) fn init() -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn get(args: GetArgs) -> Result<()> {
+pub(crate) fn get(args: &GetArgs) -> Result<()> {
     info!("executing 'get {}'", args.path().full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mk(args.path(), &pkg)?;
@@ -87,7 +87,7 @@ pub(crate) fn get(args: GetArgs) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn put(args: PutArgs) -> Result<()> {
+pub(crate) fn put(args: &PutArgs) -> Result<()> {
     info!("executing 'put {}'", args.path().full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mk(args.path(), &pkg)?;

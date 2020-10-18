@@ -40,8 +40,8 @@ fn main() -> Result<()> {
             let cfg = Cfg::load()?;
             debug!("read config: {:#?}", cfg);
             match other {
-                Cmd::Get { path } => cmd::get(GetArgs::new(path, cfg, opt))?,
-                Cmd::Put { path } => cmd::put(PutArgs::new(path, cfg, opt))?,
+                Cmd::Get { path } => cmd::get(&GetArgs::new(path, cfg, &opt))?,
+                Cmd::Put { path } => cmd::put(&PutArgs::new(path, &cfg, &opt))?,
                 _ => unreachable!("This code branch will never be executed"),
             }
         }

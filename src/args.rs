@@ -14,7 +14,7 @@ struct Common {
 }
 
 impl GetArgs {
-    pub(crate) fn new<S: Into<String>>(path: S, cfg: Cfg, opt: Opt) -> Self {
+    pub(crate) fn new<S: Into<String>>(path: S, cfg: Cfg, opt: &Opt) -> Self {
         Self {
             common: Common {
                 path: Path::new(path),
@@ -47,7 +47,7 @@ pub(crate) struct PutArgs {
 }
 
 impl PutArgs {
-    pub(crate) fn new<S: Into<String>>(path: S, cfg: Cfg, opt: Opt) -> Self {
+    pub(crate) fn new<S: Into<String>>(path: S, cfg: &Cfg, opt: &Opt) -> Self {
         Self {
             common: Common {
                 path: Path::new(path),
