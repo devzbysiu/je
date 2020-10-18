@@ -42,7 +42,7 @@ pub(crate) struct Opt {
     pub(crate) cmd: Cmd,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, StructOpt, Clone)]
 pub(crate) enum Cmd {
     /// Downloads content to local file system
     Get {
@@ -71,35 +71,31 @@ pub(crate) fn init() -> Result<()> {
 }
 
 pub(crate) fn get(args: GetArgs) -> Result<()> {
-    let path = args.path;
-    info!("executing 'get {}'", path.full());
+    info!("executing 'get {}'", args.path().full());
     let pkg = pkgdir::Pkg::default();
-    let tmp_dir = pkgdir::mk(&path, &pkg)?;
-    let instance = args.instance;
+    let tmp_dir = pkgdir::mk(args.path(), &pkg)?;
     pkg::zip_pkg(&tmp_dir)?;
-    pkgmgr::upload_pkg(&instance, &tmp_dir)?;
-    pkgmgr::build_pkg(&instance, &pkg)?;
+    pkgmgr::upload_pkg(args.instance(), &tmp_dir)?;
+    pkgmgr::build_pkg(args.instance(), &pkg)?;
     thread::sleep(Duration::from_millis(100));
     pkgdir::clean(&tmp_dir)?;
-    pkgmgr::download_pkg(&instance, &tmp_dir, &pkg)?;
-    pkgmgr::delete_pkg(args.debug, &instance, &pkg)?;
+    pkgmgr::download_pkg(args.instance(), &tmp_dir, &pkg)?;
+    pkgmgr::delete_pkg(args.debug(), args.instance(), &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
-    fsops::cleanup_files(&args.ignore_properties, &tmp_dir)?;
-    fsops::mv_files_back(&tmp_dir, &path)?;
+    fsops::cleanup_files(args.ignore_properties(), &tmp_dir)?;
+    fsops::mv_files_back(&tmp_dir, args.path())?;
     Ok(())
 }
 
 pub(crate) fn put(args: PutArgs) -> Result<()> {
-    let path = args.path;
-    info!("executing 'put {}'", path.full());
+    info!("executing 'put {}'", args.path().full());
     let pkg = pkgdir::Pkg::default();
-    let tmp_dir = pkgdir::mk(&path, &pkg)?;
-    let instance = args.instance;
-    cp_files_to_pkg(&path, &tmp_dir)?;
+    let tmp_dir = pkgdir::mk(args.path(), &pkg)?;
+    cp_files_to_pkg(args.path(), &tmp_dir)?;
     pkg::zip_pkg(&tmp_dir)?;
-    pkgmgr::upload_pkg(&instance, &tmp_dir)?;
-    pkgmgr::install_pkg(&instance, &pkg)?;
-    pkgmgr::delete_pkg(args.debug, &instance, &pkg)?;
+    pkgmgr::upload_pkg(args.instance(), &tmp_dir)?;
+    pkgmgr::install_pkg(args.instance(), &pkg)?;
+    pkgmgr::delete_pkg(args.debug(), args.instance(), &pkg)?;
     Ok(())
 }
 

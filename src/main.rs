@@ -3,7 +3,6 @@ use crate::cmd::{Cmd, Opt};
 use anyhow::Result;
 use args::{GetArgs, PutArgs};
 use log::{debug, info};
-use path::Path;
 use std::env;
 use structopt::StructOpt;
 
@@ -34,30 +33,16 @@ fn main() -> Result<()> {
     debug!("parsed opts: {:#?}", opt);
     debug!("current workiong dir: {:?}", env::current_dir());
     info!("starting");
-    match opt.cmd {
+    let cmd = opt.cmd.clone();
+    match cmd {
         Cmd::Init => cmd::init()?,
         other => {
             let cfg = Cfg::load()?;
             debug!("read config: {:#?}", cfg);
             match other {
-                Cmd::Get { path } => {
-                    let args = GetArgs {
-                        path: Path::new(path),
-                        instance: cfg.instance(opt.profile.as_ref()),
-                        debug: opt.debug,
-                        ignore_properties: cfg.ignore_properties,
-                    };
-                    cmd::get(args)?;
-                }
-                Cmd::Put { path } => {
-                    let args = PutArgs {
-                        path: Path::new(path),
-                        instance: cfg.instance(opt.profile.as_ref()),
-                        debug: opt.debug,
-                    };
-                    cmd::put(args)?
-                }
-                _ => unreachable!(),
+                Cmd::Get { path } => cmd::get(GetArgs::new(path, cfg, opt))?,
+                Cmd::Put { path } => cmd::put(PutArgs::new(path, cfg, opt))?,
+                _ => unreachable!("This code branch will never be executed"),
             }
         }
     }

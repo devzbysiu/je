@@ -1,6 +1,7 @@
 use anyhow::Result;
 use std::path::Path as OsPath;
 
+#[derive(Debug)]
 pub(crate) struct Path(String);
 
 impl Path {
