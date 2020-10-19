@@ -31,19 +31,13 @@ impl Cfg {
             user: "admin".to_string(),
             pass: "admin".to_string(),
         };
+        let profiles = self.profiles.clone();
         match profile {
-            Some(name) => self
-                .profiles
-                .clone()
+            Some(name) => profiles
                 .into_iter()
                 .find(|p| p.name == *name)
                 .unwrap_or(default_instance),
-            None => self
-                .profiles
-                .clone()
-                .into_iter()
-                .next()
-                .unwrap_or(default_instance),
+            None => profiles.into_iter().next().unwrap_or(default_instance),
         }
     }
 }
