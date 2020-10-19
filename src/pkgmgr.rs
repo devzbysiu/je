@@ -10,19 +10,19 @@ use std::io::prelude::*;
 use tempfile::TempDir;
 
 pub(crate) fn upload_pkg(instance: &Instance, tmp_dir: &TempDir) -> Result<()> {
-    info!("uploading pkg to instance: {}", instance.addr);
+    info!("uploading pkg to instance: {}", instance.addr());
     let form = multipart::Form::new().file("package", tmp_dir.path().join("pkg.zip"))?;
     let client = Client::new();
     let resp = client
         .post(&format!(
             "{}/crx/packmgr/service/.json?cmd=upload",
-            instance.addr
+            instance.addr()
         ))
         .header(
             "Authorization",
             format!(
                 "Basic {}",
-                encode(format!("{}:{}", instance.user, instance.pass))
+                encode(format!("{}:{}", instance.user(), instance.pass()))
             ),
         )
         .multipart(form)
@@ -35,20 +35,20 @@ pub(crate) fn build_pkg(instance: &Instance, pkg: &pkgdir::Pkg) -> Result<()> {
     info!(
         "building pkg with path {} on instance {}",
         pkg.path(),
-        instance.addr
+        instance.addr()
     );
     let client = Client::new();
     let resp = client
         .post(&format!(
             "{}/crx/packmgr/service/.json/etc/packages/{}?cmd=build",
-            instance.addr,
+            instance.addr(),
             pkg.path(),
         ))
         .header(
             "Authorization",
             format!(
                 "Basic {}",
-                encode(format!("{}:{}", instance.user, instance.pass))
+                encode(format!("{}:{}", instance.user(), instance.pass()))
             ),
         )
         .send()?;
@@ -64,7 +64,7 @@ pub(crate) fn download_pkg(
     info!("downloading pkg");
     let client = Client::new();
     let resp = client
-        .get(&format!("{}/etc/packages/{}", instance.addr, pkg.path(),))
+        .get(&format!("{}/etc/packages/{}", instance.addr(), pkg.path(),))
         .header("Authorization", format!("Basic {}", encode("admin:admin")))
         .send()?;
     debug!("download pkg response: {:#?}", resp);
@@ -77,20 +77,20 @@ pub(crate) fn install_pkg(instance: &Instance, pkg: &pkgdir::Pkg) -> Result<()> 
     info!(
         "installing pkg {} on instance: {}",
         pkg.path(),
-        instance.addr
+        instance.addr()
     );
     let client = Client::new();
     let resp = client
         .post(&format!(
             "{}/crx/packmgr/service/.json/etc/packages/{}?cmd=install",
-            instance.addr,
+            instance.addr(),
             pkg.path()
         ))
         .header(
             "Authorization",
             format!(
                 "Basic {}",
-                encode(format!("{}:{}", instance.user, instance.pass))
+                encode(format!("{}:{}", instance.user(), instance.pass()))
             ),
         )
         .send()?;
@@ -102,19 +102,23 @@ pub(crate) fn delete_pkg(debug: bool, instance: &Instance, pkg: &pkgdir::Pkg) ->
     if debug {
         info!("package deletion omitted because of passed flag");
     } else {
-        info!("deleting pkg {} on instance: {}", pkg.path(), instance.addr);
+        info!(
+            "deleting pkg {} on instance: {}",
+            pkg.path(),
+            instance.addr()
+        );
         let client = Client::new();
         let resp = client
             .post(&format!(
                 "{}/crx/packmgr/service/.json/etc/packages/{}?cmd=delete",
-                instance.addr,
+                instance.addr(),
                 pkg.path()
             ))
             .header(
                 "Authorization",
                 format!(
                     "Basic {}",
-                    encode(format!("{}:{}", instance.user, instance.pass))
+                    encode(format!("{}:{}", instance.user(), instance.pass()))
                 ),
             )
             .send()?;

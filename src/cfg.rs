@@ -1,4 +1,5 @@
 use anyhow::Result;
+use getset::Getters;
 use log::debug;
 use serde_derive::{Deserialize, Serialize};
 use std::env;
@@ -51,12 +52,16 @@ impl Default for Cfg {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[derive(Getters, Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub(crate) struct Instance {
-    pub(crate) name: String,
-    pub(crate) addr: String,
-    pub(crate) user: String,
-    pub(crate) pass: String,
+    #[getset(get = "pub")]
+    name: String,
+    #[getset(get = "pub")]
+    addr: String,
+    #[getset(get = "pub")]
+    user: String,
+    #[getset(get = "pub")]
+    pass: String,
 }
 
 impl Instance {
