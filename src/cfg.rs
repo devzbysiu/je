@@ -84,6 +84,24 @@ mod test {
     use tempfile::TempDir;
 
     #[test]
+    fn test_default() -> Result<()> {
+        // given
+        let expected_instance = Instance {
+            name: "author".into(),
+            addr: "http://localhost:4502".into(),
+            user: "admin".into(),
+            pass: "admin".into(),
+        };
+
+        // when
+        let default_instance = Instance::default();
+
+        // then
+        assert_eq!(default_instance, expected_instance);
+        Ok(())
+    }
+
+    #[test]
     fn test_load_when_config_exists() -> Result<()> {
         // given
         let initial_dir = env::current_dir()?;
