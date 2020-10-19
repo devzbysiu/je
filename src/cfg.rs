@@ -53,14 +53,11 @@ impl Default for Cfg {
 }
 
 #[derive(Getters, Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[getset(get = "pub")]
 pub(crate) struct Instance {
-    #[getset(get = "pub")]
     name: String,
-    #[getset(get = "pub")]
     addr: String,
-    #[getset(get = "pub")]
     user: String,
-    #[getset(get = "pub")]
     pass: String,
 }
 
