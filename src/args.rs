@@ -7,10 +7,13 @@ use getset::{CopyGetters, Getters};
 pub(crate) struct GetArgs {
     #[getset(get = "pub")]
     path: Path,
+
     #[getset(get = "pub")]
     instance: Instance,
+
     #[getset(get_copy = "pub")]
     debug: bool,
+
     #[getset(get = "pub")]
     ignore_properties: Vec<String>,
 }
@@ -30,8 +33,10 @@ impl GetArgs {
 pub(crate) struct PutArgs {
     #[getset(get = "pub")]
     path: Path,
+
     #[getset(get = "pub")]
     instance: Instance,
+
     #[getset(get_copy = "pub")]
     debug: bool,
 }

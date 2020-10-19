@@ -131,7 +131,7 @@ mod test {
     use super::*;
     use anyhow::Result;
     use std::env;
-    use std::fs::{read_to_string, File};
+    use std::fs::{create_dir_all, read_to_string, File};
     use tempfile::TempDir;
 
     #[test]
@@ -187,6 +187,46 @@ pass = "admin"
 "#
         );
         env::set_current_dir(initial_dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_dst_path_when_path_is_a_file() -> Result<()> {
+        // given
+        let homepath = "/tmp/je-test/jcr_root/content/project/en_gb/home";
+        create_dir_all(homepath)?;
+        let filepath = format!("{}/.content.xml", homepath);
+        File::create(&filepath)?;
+
+        let tmp_dir = TempDir::new()?;
+        let expected_path = tmp_dir
+            .path()
+            .join("jcr_root/content/project/en_gb/home/.content.xml");
+        let path = Path::new(filepath);
+
+        // when
+        let dst = dst_path(&path, &tmp_dir)?;
+
+        // then
+        assert_eq!(dst, expected_path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_dst_path_when_path_is_a_dir() -> Result<()> {
+        // given
+        let dirpath = "/tmp/je-test/jcr_root/content/project/en_gb/home/test";
+        create_dir_all(dirpath)?;
+        let path = Path::new(dirpath);
+
+        let tmp_dir = TempDir::new()?;
+        let expected_path = tmp_dir.path().join("jcr_root/content/project/en_gb/home");
+
+        // when
+        let dst = dst_path(&path, &tmp_dir)?;
+
+        // then
+        assert_eq!(dst, expected_path);
         Ok(())
     }
 }
