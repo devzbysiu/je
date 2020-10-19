@@ -144,4 +144,119 @@ pass = "pass1"
 
         Ok(())
     }
+
+    #[test]
+    fn test_instance_with_existing_profile() -> Result<()> {
+        // given
+        let initial_dir = env::current_dir()?;
+        let tmp_dir = TempDir::new()?;
+        env::set_current_dir(tmp_dir.path())?;
+        let mut cfg_file = File::create(".je")?;
+        cfg_file.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+[[profile]]
+name = "author"
+addr = "http://localhost:4502"
+user = "user1"
+pass = "pass1"
+"#
+            .as_bytes(),
+        )?;
+        let expected_instance = Instance {
+            name: "author".into(),
+            addr: "http://localhost:4502".into(),
+            user: "user1".into(),
+            pass: "pass1".into(),
+        };
+
+        // when
+        let cfg = Cfg::load()?;
+        let instance = cfg.instance(Some(&String::from("author")));
+
+        // then
+        assert_eq!(instance, expected_instance);
+
+        env::set_current_dir(initial_dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_instance_with_not_existing_profile() -> Result<()> {
+        // given
+        let initial_dir = env::current_dir()?;
+        let tmp_dir = TempDir::new()?;
+        env::set_current_dir(tmp_dir.path())?;
+        let mut cfg_file = File::create(".je")?;
+        cfg_file.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+[[profile]]
+name = "author"
+addr = "http://localhost:4502"
+user = "user1"
+pass = "pass1"
+"#
+            .as_bytes(),
+        )?;
+        let default_instance = Instance {
+            name: "author".into(),
+            addr: "http://localhost:4502".into(),
+            user: "admin".into(),
+            pass: "admin".into(),
+        };
+
+        // when
+        let cfg = Cfg::load()?;
+        let instance = cfg.instance(Some(&String::from("not-existing")));
+
+        // then
+        assert_eq!(instance, default_instance);
+
+        env::set_current_dir(initial_dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_instance_when_no_profile_was_selected() -> Result<()> {
+        // given
+        let initial_dir = env::current_dir()?;
+        let tmp_dir = TempDir::new()?;
+        env::set_current_dir(tmp_dir.path())?;
+        let mut cfg_file = File::create(".je")?;
+        cfg_file.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+[[profile]]
+name = "publish"
+addr = "http://localhost:4503"
+user = "user2"
+pass = "pass2"
+
+[[profile]]
+name = "author"
+addr = "http://localhost:4502"
+user = "user1"
+pass = "pass1"
+
+"#
+            .as_bytes(),
+        )?;
+        let first_instance = Instance {
+            name: "publish".into(),
+            addr: "http://localhost:4503".into(),
+            user: "user2".into(),
+            pass: "pass2".into(),
+        };
+
+        // when
+        let cfg = Cfg::load()?;
+        let instance = cfg.instance(None);
+
+        // then
+        assert_eq!(instance, first_instance);
+
+        env::set_current_dir(initial_dir)?;
+        Ok(())
+    }
 }
