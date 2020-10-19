@@ -2,3 +2,4 @@
 .blinc
 .development.env
 cobertura.xml
+tarpaulin-report.html

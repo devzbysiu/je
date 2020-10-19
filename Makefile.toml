@@ -25,6 +25,11 @@ clear = true
 command = "cargo"
 args = ["tarpaulin", "--ignore-tests", "-v", "--out", "Xml"]
 
+[tasks.coverage-report]
+clear = true
+command = "cargo"
+args = ["tarpaulin", "--ignore-tests", "-v", "--out", "Html"]
+
 [tasks.all]
 dependencies = [
     "format",
