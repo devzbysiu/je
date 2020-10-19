@@ -25,12 +25,7 @@ impl Cfg {
     }
 
     pub(crate) fn instance(&self, profile: Option<&String>) -> Instance {
-        let default_instance = Instance {
-            name: "author".to_string(),
-            addr: "http://localhost:4502".to_string(),
-            user: "admin".to_string(),
-            pass: "admin".to_string(),
-        };
+        let default_instance = Instance::new("author", "http://localhost:4502", "admin", "admin");
         let profiles = self.profiles.clone();
         match profile {
             Some(name) => profiles
@@ -45,12 +40,12 @@ impl Cfg {
 impl Default for Cfg {
     fn default() -> Self {
         Self {
-            profiles: vec![Instance {
-                name: "author".into(),
-                addr: "http://localhost:4502".into(),
-                user: "admin".into(),
-                pass: "admin".into(),
-            }],
+            profiles: vec![Instance::new(
+                "author",
+                "http://localhost:4502",
+                "admin",
+                "admin",
+            )],
             ignore_properties: vec![],
         }
     }
@@ -62,6 +57,17 @@ pub(crate) struct Instance {
     pub(crate) addr: String,
     pub(crate) user: String,
     pub(crate) pass: String,
+}
+
+impl Instance {
+    fn new<S: Into<String>>(name: S, addr: S, user: S, pass: S) -> Self {
+        Self {
+            name: name.into(),
+            addr: addr.into(),
+            user: user.into(),
+            pass: pass.into(),
+        }
+    }
 }
 
 impl Default for Instance {
@@ -86,12 +92,7 @@ mod test {
     #[test]
     fn test_default() -> Result<()> {
         // given
-        let expected_instance = Instance {
-            name: "author".into(),
-            addr: "http://localhost:4502".into(),
-            user: "admin".into(),
-            pass: "admin".into(),
-        };
+        let expected_instance = Instance::new("author", "http://localhost:4502", "admin", "admin");
 
         // when
         let default_instance = Instance::default();
@@ -120,12 +121,12 @@ pass = "pass1"
             .as_bytes(),
         )?;
 
-        let expected_profiles = vec![Instance {
-            name: "author".into(),
-            addr: "http://localhost:4502".into(),
-            user: "user1".into(),
-            pass: "pass1".into(),
-        }];
+        let expected_profiles = vec![Instance::new(
+            "author",
+            "http://localhost:4502",
+            "user1",
+            "pass1",
+        )];
 
         // when
         let cfg = Cfg::load()?;
@@ -143,12 +144,12 @@ pass = "pass1"
         // when
         let cfg = Cfg::load()?;
 
-        let expected_profiles = vec![Instance {
-            name: "author".into(),
-            addr: "http://localhost:4502".into(),
-            user: "admin".into(),
-            pass: "admin".into(),
-        }];
+        let expected_profiles = vec![Instance::new(
+            "author",
+            "http://localhost:4502",
+            "admin",
+            "admin",
+        )];
 
         // then
         assert_eq!(cfg.ignore_properties, Vec::<String>::new());
@@ -175,12 +176,7 @@ pass = "pass1"
 "#
             .as_bytes(),
         )?;
-        let expected_instance = Instance {
-            name: "author".into(),
-            addr: "http://localhost:4502".into(),
-            user: "user1".into(),
-            pass: "pass1".into(),
-        };
+        let expected_instance = Instance::new("author", "http://localhost:4502", "user1", "pass1");
 
         // when
         let cfg = Cfg::load()?;
@@ -211,12 +207,7 @@ pass = "pass1"
 "#
             .as_bytes(),
         )?;
-        let default_instance = Instance {
-            name: "author".into(),
-            addr: "http://localhost:4502".into(),
-            user: "admin".into(),
-            pass: "admin".into(),
-        };
+        let default_instance = Instance::new("author", "http://localhost:4502", "admin", "admin");
 
         // when
         let cfg = Cfg::load()?;
@@ -254,12 +245,7 @@ pass = "pass1"
 "#
             .as_bytes(),
         )?;
-        let first_instance = Instance {
-            name: "publish".into(),
-            addr: "http://localhost:4503".into(),
-            user: "user2".into(),
-            pass: "pass2".into(),
-        };
+        let first_instance = Instance::new("publish", "http://localhost:4503", "user2", "pass2");
 
         // when
         let cfg = Cfg::load()?;
