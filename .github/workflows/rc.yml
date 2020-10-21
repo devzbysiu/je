@@ -53,11 +53,7 @@ jobs:
           else
             shasum -a 256 je-${{ matrix.artifact_prefix }}.tar.gz > je-${{ matrix.artifact_prefix }}.sha256
           fi
-      - name: Releasing assets
-        uses: softprops/action-gh-release@v1
+      - uses: actions/upload-artifact@v2
         with:
-          files: |
-            target/${{ matrix.target }}/release/je-${{ matrix.artifact_prefix }}.tar.gz
-            target/${{ matrix.target }}/release/je-${{ matrix.artifact_prefix }}.sha256
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: je-${{ matrix.artifact_prefix }}.tar.gz
+          path: target/${{ matrix.target }}/release/je-${{ matrix.artifact_prefix }}.tar.gz
