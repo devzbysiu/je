@@ -42,6 +42,17 @@ pub(crate) struct Opt {
     pub(crate) cmd: Cmd,
 }
 
+impl Default for Opt {
+    fn default() -> Self {
+        Self {
+            verbose: 0,
+            debug: false,
+            profile: None,
+            cmd: Cmd::Get { path: "".into() },
+        }
+    }
+}
+
 #[derive(Debug, StructOpt, Clone)]
 pub(crate) enum Cmd {
     /// Downloads content to local file system
