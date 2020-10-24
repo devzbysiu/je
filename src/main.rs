@@ -84,6 +84,7 @@ mod test {
 
         // when
         setup_log_level_for_logger(&opt);
+
         // then
         assert_eq!(std::env::var("RUST_LOG").unwrap(), "je=debug");
     }
@@ -99,6 +100,7 @@ mod test {
 
         // when
         setup_log_level_for_logger(&opt);
+
         // then
         assert_eq!(std::env::var("RUST_LOG").unwrap(), "");
     }
