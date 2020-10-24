@@ -73,8 +73,15 @@ SUBCOMMANDS:
 - include path to `je` executable into your PATH variable
 
 ### Rust programmers
+
+#### Install
 ```bash
 cargo install je
+```
+
+#### Upgrade
+```bash
+cargo install --force je
 ```
 
 # <p id="configuration">Configuration</p>
