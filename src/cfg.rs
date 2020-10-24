@@ -89,6 +89,7 @@ mod test {
     use std::env;
     use std::fs::File;
     use std::io::prelude::*;
+    use std::path::PathBuf;
     use tempfile::TempDir;
 
     #[test]
@@ -107,11 +108,8 @@ mod test {
     #[test]
     fn test_load_when_config_exists() -> Result<()> {
         // given
-        let initial_dir = env::current_dir()?;
-        let tmp_dir = TempDir::new()?;
-        env::set_current_dir(tmp_dir.path())?;
-        let mut cfg_file = File::create(".je")?;
-        cfg_file.write_all(
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
             r#"ignore_properties = ["prop1", "prop2"]
 
 [[profile]]
@@ -119,8 +117,7 @@ name = "author"
 addr = "http://localhost:4502"
 user = "user1"
 pass = "pass1"
-"#
-            .as_bytes(),
+"#,
         )?;
 
         let expected_profiles = vec![Instance::new(
@@ -136,8 +133,6 @@ pass = "pass1"
         // then
         assert_eq!(cfg.ignore_properties, vec!["prop1", "prop2"]);
         assert_eq!(cfg.profiles, expected_profiles);
-
-        env::set_current_dir(initial_dir)?;
         Ok(())
     }
 
@@ -163,11 +158,8 @@ pass = "pass1"
     #[test]
     fn test_instance_with_existing_profile() -> Result<()> {
         // given
-        let initial_dir = env::current_dir()?;
-        let tmp_dir = TempDir::new()?;
-        env::set_current_dir(tmp_dir.path())?;
-        let mut cfg_file = File::create(".je")?;
-        cfg_file.write_all(
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
             r#"ignore_properties = ["prop1", "prop2"]
 
 [[profile]]
@@ -175,8 +167,7 @@ name = "author"
 addr = "http://localhost:4502"
 user = "user1"
 pass = "pass1"
-"#
-            .as_bytes(),
+"#,
         )?;
         let expected_instance = Instance::new("author", "http://localhost:4502", "user1", "pass1");
 
@@ -186,19 +177,14 @@ pass = "pass1"
 
         // then
         assert_eq!(instance, expected_instance);
-
-        env::set_current_dir(initial_dir)?;
         Ok(())
     }
 
     #[test]
     fn test_instance_with_not_existing_profile() -> Result<()> {
         // given
-        let initial_dir = env::current_dir()?;
-        let tmp_dir = TempDir::new()?;
-        env::set_current_dir(tmp_dir.path())?;
-        let mut cfg_file = File::create(".je")?;
-        cfg_file.write_all(
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
             r#"ignore_properties = ["prop1", "prop2"]
 
 [[profile]]
@@ -206,8 +192,7 @@ name = "author"
 addr = "http://localhost:4502"
 user = "user1"
 pass = "pass1"
-"#
-            .as_bytes(),
+"#,
         )?;
         let default_instance = Instance::new("author", "http://localhost:4502", "admin", "admin");
 
@@ -217,19 +202,14 @@ pass = "pass1"
 
         // then
         assert_eq!(instance, default_instance);
-
-        env::set_current_dir(initial_dir)?;
         Ok(())
     }
 
     #[test]
     fn test_instance_when_no_profile_was_selected() -> Result<()> {
         // given
-        let initial_dir = env::current_dir()?;
-        let tmp_dir = TempDir::new()?;
-        env::set_current_dir(tmp_dir.path())?;
-        let mut cfg_file = File::create(".je")?;
-        cfg_file.write_all(
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
             r#"ignore_properties = ["prop1", "prop2"]
 
 [[profile]]
@@ -244,8 +224,7 @@ addr = "http://localhost:4502"
 user = "user1"
 pass = "pass1"
 
-"#
-            .as_bytes(),
+"#,
         )?;
         let first_instance = Instance::new("publish", "http://localhost:4503", "user2", "pass2");
 
@@ -255,8 +234,34 @@ pass = "pass1"
 
         // then
         assert_eq!(instance, first_instance);
-
-        env::set_current_dir(initial_dir)?;
         Ok(())
+    }
+
+    struct TestConfig {
+        initial_dir: PathBuf,
+        tmp_dir: TempDir,
+    }
+
+    impl TestConfig {
+        fn new() -> Result<Self> {
+            Ok(TestConfig {
+                initial_dir: env::current_dir()?,
+                tmp_dir: TempDir::new()?,
+            })
+        }
+
+        fn write_all<S: Into<String>>(&self, content: S) -> Result<()> {
+            env::set_current_dir(self.tmp_dir.path())?;
+            let mut cfg_file = File::create(".je")?;
+            cfg_file.write_all(content.into().as_bytes())?;
+            Ok(())
+        }
+    }
+
+    impl Drop for TestConfig {
+        fn drop(&mut self) {
+            env::set_current_dir(self.initial_dir.clone())
+                .expect("failed to change to an initial dir");
+        }
     }
 }
