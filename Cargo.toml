@@ -20,6 +20,7 @@ anyhow = "1.0.32"
 tempfile = "3.1.0"
 zip = "0.5.6"
 reqwest = { version = "0.10.7", features = [ "blocking" ] }
+# reqwest = { path = "/home/zbychu/software/reqwest", features = [ "blocking" ] }
 base64 = "0.13.0"
 walkdir = "2.3.1"
 toml = "0.5.6"
