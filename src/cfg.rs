@@ -368,6 +368,32 @@ pass = "pass1"
         Ok(())
     }
 
+    #[test]
+    #[should_panic]
+    fn test_bundles_when_bundle_broken() {
+        // given
+        let test_config = TestConfig::new().unwrap();
+        test_config
+            .write_all(
+                r#"ignore_properties = ["prop1", "prop2"]
+
+[[profile]]
+name = "author"
+addr = "http://localhost:4502"
+user = "user1"
+pass = "pass1"
+
+[[bundle]]
+files = ["file3", "file4"]
+
+"#,
+            )
+            .unwrap();
+
+        // when
+        let _ = Cfg::load().unwrap(); // should panic
+    }
+
     struct TestConfig {
         initial_dir: PathBuf,
         tmp_dir: TempDir,
