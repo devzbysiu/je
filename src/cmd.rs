@@ -111,13 +111,13 @@ pub(crate) fn put(args: &PutArgs) -> Result<()> {
 }
 
 fn cp_files_to_pkg(path: &Path, tmp_dir: &TempDir) -> Result<()> {
-    let dst_path = dst_path(path, tmp_dir)?;
+    let dst_path = dst_path(path, tmp_dir);
     info!(
         "copying files from {} to {}",
         path.full(),
         dst_path.display()
     );
-    fs::create_dir_all(tmp_dir.path().join(path.parent_from_root()?))?;
+    fs::create_dir_all(tmp_dir.path().join(path.parent_from_root()))?;
     if path.is_dir() {
         debug!("{} is a dir", path.full());
         dir::copy(path.full(), dst_path, &DirOpts::new())?;
@@ -128,13 +128,13 @@ fn cp_files_to_pkg(path: &Path, tmp_dir: &TempDir) -> Result<()> {
     Ok(())
 }
 
-fn dst_path(path: &Path, tmp_dir: &TempDir) -> Result<PathBuf> {
+fn dst_path(path: &Path, tmp_dir: &TempDir) -> PathBuf {
     let result = if path.is_dir() {
-        tmp_dir.path().join(path.parent_from_root()?)
+        tmp_dir.path().join(path.parent_from_root())
     } else {
         tmp_dir.path().join(path.from_root())
     };
-    Ok(result)
+    result
 }
 
 #[cfg(test)]
@@ -216,7 +216,7 @@ pass = "admin"
         let path = Path::new(filepath);
 
         // when
-        let dst = dst_path(&path, &tmp_dir)?;
+        let dst = dst_path(&path, &tmp_dir);
 
         // then
         assert_eq!(dst, expected_path);
@@ -234,7 +234,7 @@ pass = "admin"
         let expected_path = tmp_dir.path().join("jcr_root/content/project/en_gb/home");
 
         // when
-        let dst = dst_path(&path, &tmp_dir)?;
+        let dst = dst_path(&path, &tmp_dir);
 
         // then
         assert_eq!(dst, expected_path);

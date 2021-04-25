@@ -1,4 +1,3 @@
-use anyhow::Result;
 use std::path::Path as OsPath;
 
 #[derive(Debug, Clone, Default)]
@@ -31,7 +30,7 @@ impl Path {
         OsPath::new(&self.0).is_dir()
     }
 
-    pub(crate) fn parent_from_root(&self) -> Result<String> {
+    pub(crate) fn parent_from_root(&self) -> String {
         let parent = OsPath::new(&self.full())
             .parent()
             .unwrap_or_else(|| OsPath::new("/"))
@@ -40,7 +39,7 @@ impl Path {
         let parts: Vec<&str> = parent.split("jcr_root").collect();
         assert_eq!(parts.len(), 2);
         let path: String = parts[1].into();
-        Ok(format!("jcr_root{}", path))
+        format!("jcr_root{}", path)
     }
 }
 
@@ -127,17 +126,16 @@ mod test {
     }
 
     #[test]
-    fn test_parent() -> Result<()> {
+    fn test_parent() {
         // given
         let full_path = OsPath::new("/home/zbychu/jcr_root/content/test");
         let path = Path::new(full_path.display().to_string());
 
         // when
-        let path = path.parent_from_root()?;
+        let path = path.parent_from_root();
 
         // then
         assert_eq!(path, "jcr_root/content");
-        Ok(())
     }
 
     #[test]
@@ -148,6 +146,6 @@ mod test {
         let path = Path::new(root.display().to_string());
 
         // should_panic
-        path.parent_from_root().unwrap();
+        path.parent_from_root();
     }
 }

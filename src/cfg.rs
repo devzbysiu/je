@@ -2,16 +2,20 @@ use anyhow::Result;
 use getset::Getters;
 use log::debug;
 use serde_derive::{Deserialize, Serialize};
+use std::convert::Into;
 use std::env;
 use std::fs::read_to_string;
 use std::path::Path;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub(crate) struct Cfg {
     pub(crate) ignore_properties: Vec<String>,
 
     #[serde(rename = "profile")]
     pub(crate) profiles: Vec<Instance>,
+
+    #[serde(rename = "bundle")]
+    pub(crate) bundles: Option<Vec<Bundle>>,
 }
 
 impl Cfg {
@@ -26,7 +30,7 @@ impl Cfg {
     }
 
     pub(crate) fn instance(&self, profile: Option<&String>) -> Instance {
-        let default_instance = Instance::new("author", "http://localhost:4502", "admin", "admin");
+        let default_instance = Instance::default();
         let profiles = self.profiles.clone();
         match profile {
             Some(name) => profiles
@@ -34,6 +38,15 @@ impl Cfg {
                 .find(|p| p.name == *name)
                 .unwrap_or(default_instance),
             None => profiles.into_iter().next().unwrap_or(default_instance),
+        }
+    }
+
+    pub(crate) fn bundle(&self, bundle: Option<&str>) -> Option<Bundle> {
+        self.bundles.as_ref()?;
+        let bundles = self.bundles.clone().unwrap(); // can unwrap because it was checked earlier
+        match bundle {
+            Some(name) => bundles.into_iter().find(|p| p.name == *name),
+            None => None,
         }
     }
 }
@@ -48,6 +61,7 @@ impl Default for Cfg {
                 "admin",
             )],
             ignore_properties: vec![],
+            bundles: None,
         }
     }
 }
@@ -83,6 +97,22 @@ impl Default for Instance {
     }
 }
 
+#[derive(Getters, Default, Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[getset(get = "pub")]
+pub(crate) struct Bundle {
+    name: String,
+    files: Vec<String>,
+}
+
+impl Bundle {
+    fn new<S: Into<String>>(name: S, files: Vec<S>) -> Self {
+        Self {
+            name: name.into(),
+            files: files.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -93,16 +123,24 @@ mod test {
     use tempfile::TempDir;
 
     #[test]
-    fn test_default() -> Result<()> {
+    fn test_cfg_default() {
         // given
-        let expected_instance = Instance::new("author", "http://localhost:4502", "admin", "admin");
+        let expected_cfg = Cfg {
+            ignore_properties: vec![],
+            profiles: vec![Instance::new(
+                "author",
+                "http://localhost:4502",
+                "admin",
+                "admin",
+            )],
+            bundles: None,
+        };
 
         // when
-        let default_instance = Instance::default();
+        let default_cfg = Cfg::default();
 
         // then
-        assert_eq!(default_instance, expected_instance);
-        Ok(())
+        assert_eq!(default_cfg, expected_cfg);
     }
 
     #[test]
@@ -234,6 +272,99 @@ pass = "pass1"
 
         // then
         assert_eq!(instance, first_instance);
+        Ok(())
+    }
+
+    #[test]
+    fn test_bundles_when_bundle_defined() -> Result<()> {
+        // given
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+[[profile]]
+name = "author"
+addr = "http://localhost:4502"
+user = "user1"
+pass = "pass1"
+
+[[bundle]]
+name = "simple"
+files = ["file1", "file2"]
+
+"#,
+        )?;
+        let expected_bundle = Some(Bundle::new("simple", vec!["file1", "file2"]));
+
+        // when
+        let cfg = Cfg::load()?;
+        let bundle = cfg.bundle(Some("simple"));
+
+        // then
+        assert_eq!(expected_bundle, bundle);
+        Ok(())
+    }
+
+    #[test]
+    fn test_bundles_when_multiple_bundles_defined() -> Result<()> {
+        // given
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+[[profile]]
+name = "author"
+addr = "http://localhost:4502"
+user = "user1"
+pass = "pass1"
+
+[[bundle]]
+name = "simple"
+files = ["file1", "file2"]
+
+[[bundle]]
+name = "other"
+files = ["file3", "file4"]
+
+"#,
+        )?;
+        let expected_simple_bundle = Some(Bundle::new("simple", vec!["file1", "file2"]));
+        let expected_other_bundle = Some(Bundle::new("other", vec!["file3", "file4"]));
+
+        // when
+        let cfg = Cfg::load()?;
+        let simple_bundle = cfg.bundle(Some("simple"));
+        let other_bundle = cfg.bundle(Some("other"));
+
+        // then
+        assert_eq!(expected_simple_bundle, simple_bundle);
+        assert_eq!(expected_other_bundle, other_bundle);
+        Ok(())
+    }
+
+    #[test]
+    fn test_bundles_when_no_bundle() -> Result<()> {
+        // given
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+[[profile]]
+name = "author"
+addr = "http://localhost:4502"
+user = "user1"
+pass = "pass1"
+
+"#,
+        )?;
+        let expected_bundle = None;
+
+        // when
+        let cfg = Cfg::load()?;
+        let bundle = cfg.bundle(Some("not-existing"));
+
+        // then
+        assert_eq!(expected_bundle, bundle);
         Ok(())
     }
 
