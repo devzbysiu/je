@@ -41,6 +41,7 @@ impl Cfg {
         }
     }
 
+    #[allow(dead_code)] // TODO: remove that
     pub(crate) fn bundle(&self, bundle: Option<&str>) -> Option<Bundle> {
         self.bundles.as_ref()?;
         let bundles = self.bundles.clone().unwrap(); // can unwrap because it was checked earlier
@@ -105,6 +106,7 @@ pub(crate) struct Bundle {
 }
 
 impl Bundle {
+    #[allow(dead_code)] // TODO: remove that
     fn new<S: Into<String>>(name: S, files: Vec<S>) -> Self {
         Self {
             name: name.into(),
