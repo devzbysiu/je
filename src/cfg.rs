@@ -41,13 +41,17 @@ impl Cfg {
         }
     }
 
-    #[allow(dead_code)] // TODO: remove this
-    pub(crate) fn bundle(&self, bundle: Option<&str>) -> Option<Bundle> {
-        self.bundles.as_ref()?;
+    pub(crate) fn bundle(&self, bundle: Option<&str>) -> Bundle {
+        if self.bundles.is_none() {
+            return Bundle::default();
+        }
         let bundles = self.bundles.clone().unwrap(); // can unwrap because it was checked earlier
         match bundle {
-            Some(name) => bundles.into_iter().find(|p| p.name == *name),
-            None => None,
+            Some(name) => bundles
+                .into_iter()
+                .find(|p| p.name == *name)
+                .unwrap_or(Bundle::default()),
+            None => Bundle::default(),
         }
     }
 }
@@ -296,7 +300,7 @@ files = ["file1", "file2"]
 
 "#,
         )?;
-        let expected_bundle = Some(Bundle::new("simple", vec!["file1", "file2"]));
+        let expected_bundle = Bundle::new("simple", vec!["file1", "file2"]);
 
         // when
         let cfg = Cfg::load()?;
@@ -330,8 +334,8 @@ files = ["file3", "file4"]
 
 "#,
         )?;
-        let expected_simple_bundle = Some(Bundle::new("simple", vec!["file1", "file2"]));
-        let expected_other_bundle = Some(Bundle::new("other", vec!["file3", "file4"]));
+        let expected_simple_bundle = Bundle::new("simple", vec!["file1", "file2"]);
+        let expected_other_bundle = Bundle::new("other", vec!["file3", "file4"]);
 
         // when
         let cfg = Cfg::load()?;
@@ -359,7 +363,7 @@ pass = "pass1"
 
 "#,
         )?;
-        let expected_bundle = None;
+        let expected_bundle = Bundle::default();
 
         // when
         let cfg = Cfg::load()?;

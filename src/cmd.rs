@@ -1,4 +1,4 @@
-use crate::args::{GetArgs, PutArgs};
+use crate::args::{GetArgs, GetBundleArgs, PutArgs};
 use crate::cfg::Cfg;
 use crate::fsops;
 use crate::path::Path;
@@ -60,6 +60,11 @@ pub(crate) enum Cmd {
         /// path to download
         path: String,
     },
+    /// Downloads bundle defined in config file
+    GetBundle {
+        /// path to download
+        name: String,
+    },
     /// Uploads content to AEM instance
     Put {
         /// path to upload
@@ -84,7 +89,7 @@ pub(crate) fn init() -> Result<()> {
 pub(crate) fn get(args: &GetArgs) -> Result<()> {
     info!("executing 'get {}'", args.path().full());
     let pkg = pkgdir::Pkg::default();
-    let tmp_dir = pkgdir::mk(args.path(), &pkg)?;
+    let tmp_dir = pkgdir::mksimple(args.path(), &pkg)?;
     pkg::zip_pkg(&tmp_dir)?;
     pkgmgr::upload_pkg(args.instance(), &tmp_dir)?;
     pkgmgr::build_pkg(args.instance(), &pkg)?;
@@ -101,12 +106,29 @@ pub(crate) fn get(args: &GetArgs) -> Result<()> {
 pub(crate) fn put(args: &PutArgs) -> Result<()> {
     info!("executing 'put {}'", args.path().full());
     let pkg = pkgdir::Pkg::default();
-    let tmp_dir = pkgdir::mk(args.path(), &pkg)?;
+    let tmp_dir = pkgdir::mksimple(args.path(), &pkg)?;
     cp_files_to_pkg(args.path(), &tmp_dir)?;
     pkg::zip_pkg(&tmp_dir)?;
     pkgmgr::upload_pkg(args.instance(), &tmp_dir)?;
     pkgmgr::install_pkg(args.instance(), &pkg)?;
     pkgmgr::delete_pkg(args.debug(), args.instance(), &pkg)?;
+    Ok(())
+}
+
+pub(crate) fn get_bundle(args: &GetBundleArgs) -> Result<()> {
+    info!("executing 'get bundle {:?}'", args.bundle());
+    let pkg = pkgdir::Pkg::default();
+    let tmp_dir = pkgdir::mkbundle(args.bundle(), &pkg)?;
+    pkg::zip_pkg(&tmp_dir)?;
+    pkgmgr::upload_pkg(args.instance(), &tmp_dir)?;
+    pkgmgr::build_pkg(args.instance(), &pkg)?;
+    thread::sleep(Duration::from_millis(100));
+    pkgdir::clean(&tmp_dir)?;
+    pkgmgr::download_pkg(args.instance(), &tmp_dir, &pkg)?;
+    pkgmgr::delete_pkg(args.debug(), args.instance(), &pkg)?;
+    pkg::unzip_pkg(&tmp_dir)?;
+    fsops::cleanup_files(args.ignore_properties(), &tmp_dir)?;
+    fsops::mv_bundle_back(&tmp_dir, args.bundle())?;
     Ok(())
 }
 

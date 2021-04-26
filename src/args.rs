@@ -1,4 +1,4 @@
-use crate::cfg::{Cfg, Instance};
+use crate::cfg::{Bundle, Cfg, Instance};
 use crate::cmd::Opt;
 use crate::path::Path;
 use getset::{CopyGetters, Getters};
@@ -47,6 +47,32 @@ impl PutArgs {
             path: Path::new(path),
             instance: cfg.instance(opt.profile.as_ref()),
             debug: opt.debug,
+        }
+    }
+}
+
+#[derive(Debug, Getters, CopyGetters, Default, Clone)]
+pub(crate) struct GetBundleArgs {
+    #[getset(get = "pub")]
+    bundle: Bundle,
+
+    #[getset(get = "pub")]
+    instance: Instance,
+
+    #[getset(get_copy = "pub")]
+    debug: bool,
+
+    #[getset(get = "pub")]
+    ignore_properties: Vec<String>,
+}
+
+impl GetBundleArgs {
+    pub(crate) fn new<S: Into<String>>(name: S, cfg: Cfg, opt: &Opt) -> Self {
+        Self {
+            bundle: cfg.bundle(Some(&name.into())),
+            instance: cfg.instance(opt.profile.as_ref()),
+            debug: opt.debug,
+            ignore_properties: cfg.ignore_properties,
         }
     }
 }

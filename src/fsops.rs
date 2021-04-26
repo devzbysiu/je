@@ -1,3 +1,4 @@
+use crate::cfg::Bundle;
 use crate::path::Path;
 use anyhow::Result;
 use log::{debug, info};
@@ -117,6 +118,13 @@ fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[String]) -> Optio
     } else {
         None
     }
+}
+
+pub(crate) fn mv_bundle_back(tmp_dir: &TempDir, bundle: &Bundle) -> Result<()> {
+    for file in bundle.files() {
+        mv_files_back(tmp_dir, &Path::new(file))?;
+    }
+    Ok(())
 }
 
 pub(crate) fn mv_files_back(tmp_dir: &TempDir, path: &Path) -> Result<()> {

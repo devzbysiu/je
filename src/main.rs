@@ -1,7 +1,7 @@
 use crate::cfg::Cfg;
 use crate::cmd::{Cmd, Opt};
 use anyhow::Result;
-use args::{GetArgs, PutArgs};
+use args::{GetArgs, GetBundleArgs, PutArgs};
 use log::{debug, info};
 use std::env;
 use structopt::StructOpt;
@@ -31,6 +31,7 @@ fn main() -> Result<()> {
             debug!("read config: {:#?}", cfg);
             match other {
                 Cmd::Get { path } => cmd::get(&GetArgs::new(path, cfg, &opt))?,
+                Cmd::GetBundle { name } => cmd::get_bundle(&GetBundleArgs::new(name, cfg, &opt))?,
                 Cmd::Put { path } => cmd::put(&PutArgs::new(path, &cfg, &opt))?,
                 _ => unreachable!("This code branch will never be executed"),
             }

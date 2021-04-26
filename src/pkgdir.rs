@@ -1,6 +1,8 @@
+use crate::cfg::Bundle;
 use crate::path::Path;
 use anyhow::Result;
 use log::{debug, info};
+use std::convert::Into;
 use std::fs::{create_dir_all, remove_dir_all, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -34,12 +36,12 @@ impl Default for Pkg {
     }
 }
 
-pub(crate) fn mk(path: &Path, pkg: &Pkg) -> Result<TempDir> {
+pub(crate) fn mksimple(path: &Path, pkg: &Pkg) -> Result<TempDir> {
     debug!("creating pkg dir");
     let tmp_dir = TempDir::new()?;
     mk_jcr_root_dir(&tmp_dir)?;
     mk_vault_dir(&tmp_dir)?;
-    write_filter_content(&tmp_dir, path.content())?;
+    write_filter_content(&tmp_dir, &[path.content()])?;
     write_properties_content(&tmp_dir, pkg)?;
     Ok(tmp_dir)
 }
@@ -61,10 +63,10 @@ fn vault_path(tmp_dir: &TempDir) -> PathBuf {
     tmp_dir.path().join("META-INF/vault")
 }
 
-fn write_filter_content<S: Into<String>>(tmp_dir: &TempDir, content_path: S) -> Result<()> {
+fn write_filter_content(tmp_dir: &TempDir, content_paths: &[String]) -> Result<()> {
     let filter_path = format!("{}/filter.xml", vault_path(&tmp_dir).display());
     let mut filter_file = File::create(&filter_path)?;
-    let filter_content = filter_content(content_path);
+    let filter_content = filter_content(content_paths);
     debug!(
         "writing content\n{}\nto filter {}",
         filter_content, filter_path
@@ -73,15 +75,31 @@ fn write_filter_content<S: Into<String>>(tmp_dir: &TempDir, content_path: S) -> 
     Ok(())
 }
 
-fn filter_content<S: Into<String>>(path: S) -> String {
-    format!(
-        r#"<?xml version="1.0" encoding="UTF-8"?>
+fn filter_content(path: &[String]) -> String {
+    let filter_prefix = r#"<?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
-    <filter root="{}"/>
+    "#;
+    let filter_postfix = r#"
+        r#"
 </workspaceFilter>
+        "#;
+    format!(
+        r#"{}
+    <filter root="{}"/>
+{}
         "#,
-        normalize(path)
+        filter_prefix,
+        normalize_all(path),
+        filter_postfix,
     )
+}
+
+fn normalize_all(paths: &[String]) -> String {
+    paths
+        .iter()
+        .map(normalize)
+        .collect::<Vec<String>>()
+        .join("\n")
 }
 
 fn normalize<S: Into<String>>(path: S) -> String {
@@ -124,6 +142,16 @@ fn properties_content(pkg: &Pkg) -> String {
 </properties>"#,
         pkg.name, pkg.version, pkg.group
     )
+}
+
+pub(crate) fn mkbundle(bundle: &Bundle, pkg: &Pkg) -> Result<TempDir> {
+    debug!("creating pkg dir");
+    let tmp_dir = TempDir::new()?;
+    mk_jcr_root_dir(&tmp_dir)?;
+    mk_vault_dir(&tmp_dir)?;
+    write_filter_content(&tmp_dir, bundle.files())?;
+    write_properties_content(&tmp_dir, pkg)?;
+    Ok(tmp_dir)
 }
 
 pub(crate) fn clean(tmp_dir: &TempDir) -> Result<()> {
@@ -181,7 +209,7 @@ mod test {
         create_dir_all(&format!("{}/META-INF/vault", tmp_dir.path().display()))?;
 
         // when
-        write_filter_content(&tmp_dir, "/content/path")?;
+        write_filter_content(&tmp_dir, &["/content/path".into()])?;
 
         // then
         assert_eq!(
@@ -253,7 +281,7 @@ mod test {
         let pkg = Pkg::default();
 
         // when
-        let tmp_dir_path = mk(&file_path, &pkg)?;
+        let tmp_dir_path = mksimple(&file_path, &pkg)?;
 
         // then
         assert_eq!(
@@ -329,7 +357,7 @@ mod test {
 
         // then
         for (input, expected) in test_cases {
-            assert_eq!(normalize(input), expected);
+            assert_eq!(normalize_all(&[input.into()]), expected);
         }
     }
 }
