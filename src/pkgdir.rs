@@ -77,27 +77,24 @@ fn write_filter_content(tmp_dir: &TempDir, content_paths: &[String]) -> Result<(
 
 fn filter_content(path: &[String]) -> String {
     let filter_prefix = r#"<?xml version="1.0" encoding="UTF-8"?>
-<workspaceFilter version="1.0">
-    "#;
-    let filter_postfix = r#"
-        r#"
-</workspaceFilter>
-        "#;
+<workspaceFilter version="1.0">"#;
+    let filter_postfix = "</workspaceFilter>";
     format!(
         r#"{}
-    <filter root="{}"/>
+    {}
 {}
-        "#,
+"#,
         filter_prefix,
-        normalize_all(path),
+        write_filters(path),
         filter_postfix,
     )
 }
 
-fn normalize_all(paths: &[String]) -> String {
+fn write_filters(paths: &[String]) -> String {
     paths
         .iter()
         .map(normalize)
+        .map(create_filter)
         .collect::<Vec<String>>()
         .join("\n")
 }
@@ -117,6 +114,10 @@ fn normalize<S: Into<String>>(path: S) -> String {
         .replace(".xml", "")
         // windows
         .replace("\\", "/")
+}
+
+fn create_filter<S: Into<String>>(path: S) -> String {
+    format!(r#"<filter root="{}"/>"#, path.into())
 }
 
 fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
@@ -230,7 +231,7 @@ mod test {
 <workspaceFilter version="1.0">
     <filter root="/content/path"/>
 </workspaceFilter>
-        "#,
+"#,
         );
         Ok(())
     }
@@ -306,7 +307,7 @@ mod test {
 <workspaceFilter version="1.0">
     <filter root="/content/client"/>
 </workspaceFilter>
-        "#,
+"#,
         );
         assert_eq!(
             OsPath::new(&format!(
@@ -357,7 +358,7 @@ mod test {
 
         // then
         for (input, expected) in test_cases {
-            assert_eq!(normalize_all(&[input.into()]), expected);
+            assert_eq!(normalize(input), expected);
         }
     }
 }
