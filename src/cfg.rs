@@ -111,7 +111,7 @@ pub(crate) struct Bundle {
 
 impl Bundle {
     #[allow(dead_code)] // TODO: remove this
-    fn new<S: Into<String>>(name: S, files: Vec<S>) -> Self {
+    pub(crate) fn new<S: Into<String>>(name: S, files: Vec<S>) -> Self {
         Self {
             name: name.into(),
             files: files.into_iter().map(Into::into).collect(),

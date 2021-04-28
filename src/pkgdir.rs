@@ -96,7 +96,7 @@ fn write_filters(paths: &[String]) -> String {
         .map(normalize)
         .map(create_filter)
         .collect::<Vec<String>>()
-        .join("\n")
+        .join("\n    ")
 }
 
 fn normalize<S: Into<String>>(path: S) -> String {
@@ -170,6 +170,38 @@ mod test {
     use std::fs::read_to_string;
     use std::path::Path as OsPath;
     use tempfile::TempDir;
+
+    #[test]
+    fn test_path_with_correct_pkg() {
+        // given
+        let pkg = Pkg {
+            name: "pkg-name".into(),
+            version: "1.0.0".into(),
+            group: "group-name".into(),
+        };
+
+        // when
+        let path = pkg.path();
+
+        // then
+        assert_eq!(path, "group-name/pkg-name-1.0.0.zip");
+    }
+
+    #[test]
+    fn test_path_with_incorrect_pkg() {
+        // given
+        let pkg = Pkg {
+            name: "".into(),
+            version: "".into(),
+            group: "group-name".into(),
+        };
+
+        // when
+        let path = pkg.path();
+
+        // then
+        assert_eq!(path, "group-name/-.zip");
+    }
 
     #[test]
     fn test_mk_jcr_root_dir() -> Result<()> {
@@ -276,7 +308,7 @@ mod test {
     }
 
     #[test]
-    fn test_mk_pkg_dir() -> Result<()> {
+    fn test_mk_simple_dir() -> Result<()> {
         // given
         let file_path = Path::new("/home/user/project/jcr_root/content/client");
         let pkg = Pkg::default();
@@ -360,5 +392,87 @@ mod test {
         for (input, expected) in test_cases {
             assert_eq!(normalize(input), expected);
         }
+    }
+
+    #[test]
+    fn test_mk_bundle() -> Result<()> {
+        // given
+        let bundle = Bundle::new(
+            "NOT-IMPORTANT",
+            vec!["/content/client", "/content/dam/test"],
+        );
+        let pkg = Pkg::default();
+
+        // when
+        let tmp_dir_path = mkbundle(&bundle, &pkg)?;
+
+        // then
+        assert_eq!(
+            OsPath::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists(),
+            true
+        );
+        assert_eq!(
+            OsPath::new(&format!(
+                "{}/META-INF/vault/filter.xml",
+                tmp_dir_path.path().display()
+            ))
+            .exists(),
+            true
+        );
+        let filter_contents = read_to_string(format!(
+            "{}/META-INF/vault/filter.xml",
+            tmp_dir_path.path().display()
+        ))?;
+        assert_eq!(
+            filter_contents,
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/content/client"/>
+    <filter root="/content/dam/test"/>
+</workspaceFilter>
+"#,
+        );
+        assert_eq!(
+            OsPath::new(&format!(
+                "{}/META-INF/vault/properties.xml",
+                tmp_dir_path.path().display()
+            ))
+            .exists(),
+            true
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_clean_when_dir_already_empty() -> Result<()> {
+        // given
+        let tmp_dir = TempDir::new()?;
+
+        // when
+        clean(&tmp_dir)?;
+
+        // then
+        assert_eq!(tmp_dir.path().read_dir()?.next().is_none(), true);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_clean_when_has_files() -> Result<()> {
+        // given
+        let tmp_dir = TempDir::new()?;
+        File::create(tmp_dir.path().join("test-file1"))?;
+        File::create(tmp_dir.path().join("test-file2"))?;
+        File::create(tmp_dir.path().join("test-file3"))?;
+        File::create(tmp_dir.path().join("test-file4"))?;
+
+        // when
+        clean(&tmp_dir)?;
+
+        // then
+        assert_eq!(tmp_dir.path().read_dir()?.next().is_none(), true);
+
+        Ok(())
     }
 }
