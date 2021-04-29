@@ -8,7 +8,7 @@ use tempfile::TempDir;
 
 pub(crate) fn upload_pkg(client: &AemClient, dir: &TempDir) -> Result<()> {
     let resp = client.post_file(
-        &format!("/crx/packmgr/service/.json?cmd=upload"),
+        "/crx/packmgr/service/.json?cmd=upload",
         dir.path().join("pkg.zip"),
     )?;
     debug!("upload pkg response: {:#?}", resp);
@@ -19,7 +19,7 @@ pub(crate) fn build_pkg(client: &AemClient, pkg: &pkgdir::Pkg) -> Result<()> {
     let resp = client.post(&format!(
         "/crx/packmgr/service/.json/etc/packages/{}?cmd=build",
         pkg.path(),
-    ));
+    ))?;
     debug!("build pkg response: {:#?}", resp);
     Ok(())
 }

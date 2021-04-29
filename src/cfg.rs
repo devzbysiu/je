@@ -50,7 +50,7 @@ impl Cfg {
             Some(name) => bundles
                 .into_iter()
                 .find(|p| p.name == *name)
-                .unwrap_or(Bundle::default()),
+                .unwrap_or_default(),
             None => Bundle::default(),
         }
     }
