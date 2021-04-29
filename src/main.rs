@@ -21,7 +21,7 @@ fn main() -> Result<()> {
     pretty_env_logger::init();
 
     debug!("parsed opts: {:#?}", opt);
-    debug!("current workiong dir: {:?}", env::current_dir());
+    debug!("current working dir: {:?}", env::current_dir());
     info!("starting");
     let cmd = opt.cmd.clone();
     match cmd {
