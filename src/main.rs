@@ -14,6 +14,7 @@ mod path;
 mod pkg;
 mod pkgdir;
 mod pkgmgr;
+mod http;
 
 fn main() -> Result<()> {
     let opt = Opt::from_args();

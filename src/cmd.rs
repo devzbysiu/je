@@ -1,6 +1,7 @@
 use crate::args::{GetArgs, GetBundleArgs, PutArgs};
 use crate::cfg::Cfg;
 use crate::fsops;
+use crate::http::AemClient;
 use crate::path::Path;
 use crate::pkg;
 use crate::pkgdir;
@@ -90,13 +91,14 @@ pub(crate) fn get(args: &GetArgs) -> Result<()> {
     info!("executing 'get {}'", args.path().full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mksimple(args.path(), &pkg)?;
+    let client = AemClient::new(args.instance());
     pkg::zip_pkg(&tmp_dir)?;
-    pkgmgr::upload_pkg(args.instance(), &tmp_dir)?;
-    pkgmgr::build_pkg(args.instance(), &pkg)?;
+    pkgmgr::upload_pkg(&client, &tmp_dir)?;
+    pkgmgr::build_pkg(&client, &pkg)?;
     thread::sleep(Duration::from_millis(100));
     pkgdir::clean(&tmp_dir)?;
-    pkgmgr::download_pkg(args.instance(), &tmp_dir, &pkg)?;
-    pkgmgr::delete_pkg(args.debug(), args.instance(), &pkg)?;
+    pkgmgr::download_pkg(&client, &tmp_dir, &pkg)?;
+    pkgmgr::delete_pkg(&client, args.debug(), &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
     fsops::cleanup_files(args.ignore_properties(), &tmp_dir)?;
     fsops::mv_files_back(&tmp_dir, args.path())?;
@@ -107,11 +109,12 @@ pub(crate) fn put(args: &PutArgs) -> Result<()> {
     info!("executing 'put {}'", args.path().full());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mksimple(args.path(), &pkg)?;
+    let client = AemClient::new(args.instance());
     cp_files_to_pkg(args.path(), &tmp_dir)?;
     pkg::zip_pkg(&tmp_dir)?;
-    pkgmgr::upload_pkg(args.instance(), &tmp_dir)?;
-    pkgmgr::install_pkg(args.instance(), &pkg)?;
-    pkgmgr::delete_pkg(args.debug(), args.instance(), &pkg)?;
+    pkgmgr::upload_pkg(&client, &tmp_dir)?;
+    pkgmgr::install_pkg(&client, &pkg)?;
+    pkgmgr::delete_pkg(&client, args.debug(), &pkg)?;
     Ok(())
 }
 
@@ -119,13 +122,14 @@ pub(crate) fn get_bundle(args: &GetBundleArgs) -> Result<()> {
     info!("executing 'get bundle {:?}'", args.bundle());
     let pkg = pkgdir::Pkg::default();
     let tmp_dir = pkgdir::mkbundle(args.bundle(), &pkg)?;
+    let client = AemClient::new(args.instance());
     pkg::zip_pkg(&tmp_dir)?;
-    pkgmgr::upload_pkg(args.instance(), &tmp_dir)?;
-    pkgmgr::build_pkg(args.instance(), &pkg)?;
+    pkgmgr::upload_pkg(&client, &tmp_dir)?;
+    pkgmgr::build_pkg(&client, &pkg)?;
     thread::sleep(Duration::from_millis(100));
     pkgdir::clean(&tmp_dir)?;
-    pkgmgr::download_pkg(args.instance(), &tmp_dir, &pkg)?;
-    pkgmgr::delete_pkg(args.debug(), args.instance(), &pkg)?;
+    pkgmgr::download_pkg(&client, &tmp_dir, &pkg)?;
+    pkgmgr::delete_pkg(&client, args.debug(), &pkg)?;
     pkg::unzip_pkg(&tmp_dir)?;
     fsops::cleanup_files(args.ignore_properties(), &tmp_dir)?;
     fsops::mv_bundle_back(&tmp_dir, args.bundle())?;
