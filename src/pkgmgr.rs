@@ -1,4 +1,4 @@
-use crate::http::AemClient;
+use crate::http::Client;
 use crate::pkgdir;
 use anyhow::Result;
 use log::{debug, info};
@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use tempfile::TempDir;
 
-pub(crate) fn upload_pkg(client: &AemClient, dir: &TempDir) -> Result<()> {
+pub(crate) fn upload_pkg(client: &impl Client, dir: &TempDir) -> Result<()> {
     let resp = client.post_file(
         "/crx/packmgr/service/.json?cmd=upload",
         dir.path().join("pkg.zip"),
@@ -15,7 +15,7 @@ pub(crate) fn upload_pkg(client: &AemClient, dir: &TempDir) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn build_pkg(client: &AemClient, pkg: &pkgdir::Pkg) -> Result<()> {
+pub(crate) fn build_pkg(client: &impl Client, pkg: &pkgdir::Pkg) -> Result<()> {
     let resp = client.post(&format!(
         "/crx/packmgr/service/.json/etc/packages/{}?cmd=build",
         pkg.path(),
@@ -24,7 +24,7 @@ pub(crate) fn build_pkg(client: &AemClient, pkg: &pkgdir::Pkg) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn download_pkg(client: &AemClient, dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
+pub(crate) fn download_pkg(client: &impl Client, dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
     info!("downloading pkg");
     let resp = client.get(&format!("/etc/packages/{}", pkg.path(),))?;
     debug!("download pkg response: {:#?}", resp);
@@ -33,7 +33,7 @@ pub(crate) fn download_pkg(client: &AemClient, dir: &TempDir, pkg: &pkgdir::Pkg)
     Ok(())
 }
 
-pub(crate) fn install_pkg(client: &AemClient, pkg: &pkgdir::Pkg) -> Result<()> {
+pub(crate) fn install_pkg(client: &impl Client, pkg: &pkgdir::Pkg) -> Result<()> {
     let resp = client.post(&format!(
         "/crx/packmgr/service/.json/etc/packages/{}?cmd=install",
         pkg.path()
@@ -42,7 +42,7 @@ pub(crate) fn install_pkg(client: &AemClient, pkg: &pkgdir::Pkg) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn delete_pkg(client: &AemClient, debug: bool, pkg: &pkgdir::Pkg) -> Result<()> {
+pub(crate) fn delete_pkg(client: &impl Client, debug: bool, pkg: &pkgdir::Pkg) -> Result<()> {
     if debug {
         info!("package deletion omitted because of passed flag");
         return Ok(());
