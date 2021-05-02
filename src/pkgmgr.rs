@@ -59,7 +59,9 @@ pub(crate) fn delete_pkg(client: &impl Client, debug: bool, pkg: &pkgdir::Pkg) -
 mod test {
     use super::*;
     use crate::http::Response;
+    use crate::pkgdir::Pkg;
     use anyhow::Result;
+    use regex::Regex;
     use std::cell::RefCell;
     use std::path::Path;
 
@@ -75,12 +77,93 @@ mod test {
 
         // then
         assert_eq!(
-            spy.post_file_reqs(),
-            &[(
+            spy.post_file_req(),
+            (
                 "/crx/packmgr/service/.json?cmd=upload".into(),
                 to_string(&pkg_path)
-            )]
+            )
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_build_pkg() -> Result<()> {
+        // given
+        let spy = ClientSpy::new();
+        let pkg = Pkg::default();
+        let req_regex =
+            Regex::new(r"/crx/packmgr/service/\.json/etc/packages/je/je-pkg-\d+\.zip\?cmd=build")?;
+
+        // when
+        build_pkg(&spy, &pkg)?;
+
+        // then
+        assert!(req_regex.is_match(&spy.post_req()));
+        Ok(())
+    }
+
+    #[test]
+    fn test_download_pkg() -> Result<()> {
+        // given
+        let spy = ClientSpy::new();
+        let pkg = Pkg::default();
+        let dir = TempDir::new()?;
+        let req_regex = Regex::new(r"/etc/packages/je/je-pkg-\d+\.zip")?;
+
+        // when
+        download_pkg(&spy, &dir, &pkg)?;
+
+        // then
+        println!("req: {}", spy.get_req());
+        assert!(req_regex.is_match(&spy.get_req()));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_install_pkg() -> Result<()> {
+        // given
+        let spy = ClientSpy::new();
+        let pkg = Pkg::default();
+        let req_regex = Regex::new(
+            r"/crx/packmgr/service/\.json/etc/packages/je/je-pkg-\d+\.zip\?cmd=install",
+        )?;
+
+        // when
+        install_pkg(&spy, &pkg)?;
+
+        // then
+        assert!(req_regex.is_match(&spy.post_req()));
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_when_deletion_turned_on_pkg() -> Result<()> {
+        // given
+        let spy = ClientSpy::new();
+        let pkg = Pkg::default();
+        let req_regex =
+            Regex::new(r"/crx/packmgr/service/\.json/etc/packages/je/je-pkg-\d+\.zip\?cmd=delete")?;
+
+        // when
+        delete_pkg(&spy, false, &pkg)?;
+
+        // then
+        assert!(req_regex.is_match(&spy.post_req()));
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_when_deletion_skipped() -> Result<()> {
+        // given
+        let spy = ClientSpy::new();
+        let pkg = Pkg::default();
+
+        // when
+        delete_pkg(&spy, true, &pkg)?;
+
+        // then
+        assert_eq!(spy.post_req(), "");
         Ok(())
     }
 
@@ -89,18 +172,30 @@ mod test {
     }
 
     struct ClientSpy {
-        post_file_reqs: RefCell<Vec<(String, String)>>,
+        post_file_req: RefCell<(String, String)>,
+        post_req: RefCell<String>,
+        get_req: RefCell<String>,
     }
 
     impl ClientSpy {
         fn new() -> Self {
             Self {
-                post_file_reqs: RefCell::new(Vec::new()),
+                post_file_req: RefCell::new((String::new(), String::new())),
+                post_req: RefCell::new(String::new()),
+                get_req: RefCell::new(String::new()),
             }
         }
 
-        fn post_file_reqs(&self) -> Vec<(String, String)> {
-            self.post_file_reqs.take()
+        fn post_file_req(&self) -> (String, String) {
+            self.post_file_req.clone().take()
+        }
+
+        fn post_req(&self) -> String {
+            self.post_req.clone().take()
+        }
+
+        fn get_req(&self) -> String {
+            self.get_req.clone().take()
         }
     }
 
@@ -110,17 +205,17 @@ mod test {
             path: S,
             filepath: A,
         ) -> Result<Response> {
-            self.post_file_reqs
-                .borrow_mut()
-                .push((path.into(), to_string(filepath)));
+            *self.post_file_req.borrow_mut() = (path.into(), to_string(filepath));
             Ok(Response(None))
         }
 
         fn post<S: Into<String>>(&self, path: S) -> Result<Response> {
+            *self.post_req.borrow_mut() = path.into();
             Ok(Response(None))
         }
 
         fn get<S: Into<String>>(&self, path: S) -> Result<Response> {
+            *self.get_req.borrow_mut() = path.into();
             Ok(Response(None))
         }
     }

@@ -34,3 +34,6 @@ opt-level = 's'
 lto = true
 codegen-units = 1
 panic = 'abort'
+
+[dev-dependencies]
+regex = "1.5.3"
