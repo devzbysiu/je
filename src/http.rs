@@ -14,12 +14,11 @@ pub(crate) struct Response(pub(crate) Option<Resp>);
 
 impl Response {
     pub(crate) fn bytes(self) -> Result<Bytes> {
-        Ok(match self.0 {
-            Some(resp) => resp.bytes()?,
-            None => {
-                warn!("no response field available");
-                Bytes::default()
-            }
+        Ok(if let Some(resp) = self.0 {
+            resp.bytes()?
+        } else {
+            warn!("no response field available");
+            Bytes::default()
         })
     }
 }
