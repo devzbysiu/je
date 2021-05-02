@@ -469,6 +469,7 @@ version = "0.2.0"
 dependencies = [
  "anyhow",
  "base64",
+ "bytes 1.0.1",
  "fs_extra",
  "getset",
  "log",

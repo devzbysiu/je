@@ -1,14 +1,33 @@
 use crate::cfg::Instance;
+use anyhow::Result;
 use base64::encode;
+use bytes::Bytes;
+use log::warn;
 use reqwest::blocking::multipart;
-use reqwest::blocking::{Client as HttpClient, Response};
-use reqwest::Result as RqRes;
+use reqwest::blocking::{Client as HttpClient, Response as Resp};
 use std::path::Path;
 
+// the `Option<Resp>` here is not-so-elegant solution for mocking
+// the response int the mock client implementations
+#[derive(Debug)]
+pub(crate) struct Response(pub(crate) Option<Resp>);
+
+impl Response {
+    pub(crate) fn bytes(self) -> Result<Bytes> {
+        Ok(match self.0 {
+            Some(resp) => resp.bytes()?,
+            None => {
+                warn!("no response field available");
+                Bytes::default()
+            }
+        })
+    }
+}
+
 pub(crate) trait Client {
-    fn get<S: Into<String>>(&self, path: S) -> RqRes<Response>;
-    fn post<S: Into<String>>(&self, path: S) -> RqRes<Response>;
-    fn post_file<S: Into<String>, A: AsRef<Path>>(&self, path: S, filepath: A) -> RqRes<Response>;
+    fn get<S: Into<String>>(&self, path: S) -> Result<Response>;
+    fn post<S: Into<String>>(&self, path: S) -> Result<Response>;
+    fn post_file<S: Into<String>, A: AsRef<Path>>(&self, path: S, filepath: A) -> Result<Response>;
 }
 
 pub(crate) struct AemClient<'a> {
@@ -26,37 +45,43 @@ fn encoded_creds(ins: &Instance) -> String {
 }
 
 impl Client for AemClient<'_> {
-    fn get<S: Into<String>>(&self, path: S) -> RqRes<Response> {
+    fn get<S: Into<String>>(&self, path: S) -> Result<Response> {
         let ins = self.instance;
         let path = format!("{}{}", ins.addr(), path.into());
         let client = HttpClient::new();
-        client
-            .get(&path)
-            .header("Authorization", format!("Basic {}", encoded_creds(ins)))
-            .send()
+        Ok(Response(Some(
+            client
+                .get(&path)
+                .header("Authorization", format!("Basic {}", encoded_creds(ins)))
+                .send()?,
+        )))
     }
 
-    fn post<S: Into<String>>(&self, path: S) -> RqRes<Response> {
+    fn post<S: Into<String>>(&self, path: S) -> Result<Response> {
         let ins = self.instance;
         let path = format!("{}{}", ins.addr(), path.into());
         let client = HttpClient::new();
-        client
-            .post(&path)
-            .header("Authorization", format!("Basic {}", encoded_creds(ins)))
-            .send()
+        Ok(Response(Some(
+            client
+                .post(&path)
+                .header("Authorization", format!("Basic {}", encoded_creds(ins)))
+                .send()?,
+        )))
     }
 
-    fn post_file<S: Into<String>, A: AsRef<Path>>(&self, path: S, filepath: A) -> RqRes<Response> {
+    fn post_file<S: Into<String>, A: AsRef<Path>>(&self, path: S, filepath: A) -> Result<Response> {
         let ins = self.instance;
         let path = format!("{}{}", ins.addr(), path.into());
         let client = HttpClient::new();
         let form = multipart::Form::new()
             .file("package", filepath)
             .expect("failed to create multipart form");
-        client
-            .post(&path)
-            .header("Authorization", format!("Basic {}", encoded_creds(ins)))
-            .multipart(form)
-            .send()
+        Ok(Response(Some(
+            client
+                .post(&path)
+                .header("Authorization", format!("Basic {}", encoded_creds(ins)))
+                .multipart(form)
+                .send()?,
+        )))
     }
 }
