@@ -63,7 +63,7 @@ pub(crate) enum Cmd {
     },
     /// Downloads bundle defined in config file
     GetBundle {
-        /// path to download
+        /// name of the bundle
         name: String,
     },
     /// Uploads content to AEM instance
