@@ -58,10 +58,11 @@ OPTIONS:
     -p, --profile <profile>    Profile selection
 
 SUBCOMMANDS:
-    get     Downloads content to local file system
-    help    Prints this message or the help of the given subcommand(s)
-    init    Initializes configuration file
-    put     Uploads content to AEM instance
+    get           Downloads content to local file system
+    get-bundle    Downloads bundle (pack of paths) defined in config file
+    help          Prints this message or the help of the given subcommand(s)
+    init          Initializes configuration file
+    put           Uploads content to AEM instance
 ```
 
 # <p id="installation">Installation</p>
