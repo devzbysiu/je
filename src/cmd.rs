@@ -61,7 +61,7 @@ pub(crate) enum Cmd {
         /// path to download
         path: String,
     },
-    /// Downloads bundle (pack of paths) defined in config file
+    /// Downloads bundle (pack of crx paths) defined in config file
     GetBundle {
         /// name of the bundle
         name: String,

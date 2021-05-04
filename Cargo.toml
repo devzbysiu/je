@@ -29,11 +29,11 @@ fs_extra = "1.1.0"
 getset = "0.1.1"
 bytes = "1.0.1"
 
+[dev-dependencies]
+regex = "1.5.3"
+
 [profile.release]
 opt-level = 's'
 lto = true
 codegen-units = 1
 panic = 'abort'
-
-[dev-dependencies]
-regex = "1.5.3"
