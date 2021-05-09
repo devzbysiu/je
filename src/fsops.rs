@@ -97,10 +97,7 @@ pub(crate) fn cleanup_files(ignore_properties: &[IgnoreProp], tmp_dir: &TempDir)
 }
 
 fn to_entry(result: std::result::Result<DirEntry, walkdir::Error>) -> Option<Entry> {
-    match result.ok() {
-        Some(e) => Some(Entry::from(e)),
-        None => None,
-    }
+    result.ok().map(Entry::from)
 }
 
 fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[IgnoreProp]) -> Option<String> {

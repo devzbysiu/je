@@ -436,7 +436,7 @@ mod test {
             .unwrap();
 
         // when
-        let _ = Cfg::load().unwrap(); // should panic
+        let _not_important = Cfg::load().unwrap(); // should panic
     }
 
     struct TestConfig {
