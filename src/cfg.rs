@@ -106,7 +106,7 @@ impl Default for Instance {
 #[getset(get = "pub")]
 pub(crate) struct Bundle {
     name: String,
-    files: Vec<String>,
+    paths: Vec<String>,
 }
 
 impl Bundle {
@@ -114,7 +114,7 @@ impl Bundle {
     pub(crate) fn new<S: Into<String>>(name: S, files: Vec<S>) -> Self {
         Self {
             name: name.into(),
-            files: files.into_iter().map(Into::into).collect(),
+            paths: files.into_iter().map(Into::into).collect(),
         }
     }
 }
@@ -334,7 +334,7 @@ mod test {
 
                [[bundle]]
                name = "simple"
-               files = ["file1", "file2"]
+               paths = ["file1", "file2"]
             "#,
         )?;
         let expected_bundle = Bundle::new("simple", vec!["file1", "file2"]);
@@ -366,11 +366,11 @@ mod test {
 
                [[bundle]]
                name = "simple"
-               files = ["file1", "file2"]
+               paths = ["file1", "file2"]
 
                [[bundle]]
                name = "other"
-               files = ["file3", "file4"]
+               paths = ["file3", "file4"]
             "#,
         )?;
         let expected_simple_bundle = Bundle::new("simple", vec!["file1", "file2"]);
@@ -430,7 +430,7 @@ mod test {
                    pass = "pass1"
 
                    [[bundle]]
-                   files = ["file3", "file4"]
+                   paths = ["file3", "file4"]
                 "#,
             )
             .unwrap();

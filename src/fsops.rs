@@ -150,7 +150,7 @@ fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[IgnoreProp]) -> O
 }
 
 pub(crate) fn mv_bundle_back(tmp_dir: &TempDir, bundle: &Bundle) -> Result<()> {
-    for file in bundle.files() {
+    for file in bundle.paths() {
         mv_files_back(tmp_dir, &Path::new(file))?;
     }
     Ok(())

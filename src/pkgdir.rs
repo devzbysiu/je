@@ -150,7 +150,7 @@ pub(crate) fn mkbundle(bundle: &Bundle, pkg: &Pkg) -> Result<TempDir> {
     let tmp_dir = TempDir::new()?;
     mk_jcr_root_dir(&tmp_dir)?;
     mk_vault_dir(&tmp_dir)?;
-    write_filter_content(&tmp_dir, bundle.files())?;
+    write_filter_content(&tmp_dir, bundle.paths())?;
     write_properties_content(&tmp_dir, pkg)?;
     Ok(tmp_dir)
 }

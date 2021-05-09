@@ -41,8 +41,7 @@ Small utility for uploading/downloading content to/from running AEM instance.
 **It's intended to be used as an external tool for IntelliJ IDEA to make content synchronization easier.**
 
 ```bash
-❯ je
-je 0.2.0
+je 0.3.0
 Jcr Exchange - easy download and upload files to and from JCR
 
 USAGE:
@@ -59,7 +58,7 @@ OPTIONS:
 
 SUBCOMMANDS:
     get           Downloads content to local file system
-    get-bundle    Downloads bundle (pack of paths) defined in config file
+    get-bundle    Downloads bundle (pack of crx paths) defined in config file
     help          Prints this message or the help of the given subcommand(s)
     init          Initializes configuration file
     put           Uploads content to AEM instance
@@ -104,17 +103,46 @@ user = "admin"
 pass = "admin"
 ```
 ### Customize
-- general:
-  - `ignore_properties` - tell `je` which properties of `.content.xml` should be removed after
-downloading the content; it uses `contains` method to match lines to be removed
+Here is more complex configuration with description of its fields:
+```toml
+ignore_properties = [{ type = "contains", value = "jcr:createdBy" },
+                     { type = "regex", value = '.*=\[]' }]
 
+[[profile]]
+name = "author"
+addr = "http://localhost:4502"
+user = "admin"
+pass = "admin"
+
+[[profile]]
+name = "publish"
+addr = "http://localhost:4503"
+user = "admin"
+pass = "admin"
+
+[[bundle]]
+name = "configs"
+files = ["/apps/my-app/config", "/config/my-app"]
+
+[[bundle]]
+name = "dam"
+paths = ["/content/dam/my-app/thumbnails", "/content/dam/my-app/files"]
+```
+
+- `ignore_properties` - tell `je` which properties of `.content.xml` should be removed after
+downloading the content; currently, two types of ignoring mechanisms are available:
+  - `contains` - executes `line.contains(value)` on each line
+  - `regex` - executes `regex.is_match(line)` on each line, it uses Perl-style regular expressions
 - profile section - you can add multiple profiles, each with settings:
-  - `name` - name of the profile, later it can be used with `--profile` option to specify which instance is the target; if not specified, the first profile from the config is used
+  - `name` - name of the profile, later it can be used with `--profile` option to specify which
+    instance is the target; if not specified, the first profile from the config is used
   - `addr` - address of the instance, including port if domain is not available
   - `user` - user used to authenticate to AEM instance
   - `pass` - password used to authenticate to AEM instance
-
-
+- bundles section - you can define packs of files which will be synchronized in one run:
+  - `name` - name of the bundle, it can be later used with `--bundle` option to specify which
+    file pack to synchronize
+  - `paths` - which file paths are part of the bundle
 
 ### IntelliJ Setup
 
