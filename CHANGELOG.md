@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2021-09-05
+### Added
+- Support for bundles (packs of files)
+- Regex type mechanism for ignoring properties
+
 ## [0.2.0] - 2020-25-10
 ### Added
 
