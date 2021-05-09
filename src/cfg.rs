@@ -9,7 +9,7 @@ use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub(crate) struct Cfg {
-    pub(crate) ignore_properties: Vec<String>,
+    pub(crate) ignore_properties: Vec<IgnoreProp>,
 
     #[serde(rename = "profile")]
     pub(crate) profiles: Vec<Instance>,
@@ -119,6 +119,27 @@ impl Bundle {
     }
 }
 
+#[derive(Getters, Default, Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub(crate) struct IgnoreProp {
+    #[serde(rename = "type")]
+    pub(crate) ignore_type: IgnoreType,
+
+    pub(crate) value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum IgnoreType {
+    Contains,
+    Regex,
+}
+
+impl Default for IgnoreType {
+    fn default() -> Self {
+        IgnoreType::Contains
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -154,14 +175,15 @@ mod test {
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = ["prop1", "prop2"]
+            r#"ignore_properties = [{type = "contains", value = "prop1"},
+                                    {type = "contains", value = "prop2"}]
 
-[[profile]]
-name = "author"
-addr = "http://localhost:4502"
-user = "user1"
-pass = "pass1"
-"#,
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+            "#,
         )?;
 
         let expected_profiles = vec![Instance::new(
@@ -175,7 +197,19 @@ pass = "pass1"
         let cfg = Cfg::load()?;
 
         // then
-        assert_eq!(cfg.ignore_properties, vec!["prop1", "prop2"]);
+        assert_eq!(
+            cfg.ignore_properties,
+            vec![
+                IgnoreProp {
+                    ignore_type: IgnoreType::Contains,
+                    value: "prop1".to_string()
+                },
+                IgnoreProp {
+                    ignore_type: IgnoreType::Contains,
+                    value: "prop2".to_string()
+                }
+            ]
+        );
         assert_eq!(cfg.profiles, expected_profiles);
         Ok(())
     }
@@ -193,7 +227,7 @@ pass = "pass1"
         )];
 
         // then
-        assert_eq!(cfg.ignore_properties, Vec::<String>::new());
+        assert_eq!(cfg.ignore_properties, Vec::<IgnoreProp>::new());
         assert_eq!(cfg.profiles, expected_profiles);
 
         Ok(())
@@ -204,14 +238,15 @@ pass = "pass1"
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = ["prop1", "prop2"]
+            r#"ignore_properties = [{type = "contains", value = "prop1"}, 
+                                    {type = "contains", value = "prop2"}]
 
-[[profile]]
-name = "author"
-addr = "http://localhost:4502"
-user = "user1"
-pass = "pass1"
-"#,
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+            "#,
         )?;
         let expected_instance = Instance::new("author", "http://localhost:4502", "user1", "pass1");
 
@@ -229,14 +264,15 @@ pass = "pass1"
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = ["prop1", "prop2"]
+            r#"ignore_properties = [{type = "contains", value = "prop1"},
+                                    {type = "contains", value = "prop2"}]
 
-[[profile]]
-name = "author"
-addr = "http://localhost:4502"
-user = "user1"
-pass = "pass1"
-"#,
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+            "#,
         )?;
         let default_instance = Instance::new("author", "http://localhost:4502", "admin", "admin");
 
@@ -254,21 +290,22 @@ pass = "pass1"
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = ["prop1", "prop2"]
+            r#"ignore_properties = [{type = "contains", value = "prop1"},
+                                    {type = "contains", value = "prop2"}]
 
-[[profile]]
-name = "publish"
-addr = "http://localhost:4503"
-user = "user2"
-pass = "pass2"
+               [[profile]]
+               name = "publish"
+               addr = "http://localhost:4503"
+               user = "user2"
+               pass = "pass2"
 
-[[profile]]
-name = "author"
-addr = "http://localhost:4502"
-user = "user1"
-pass = "pass1"
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
 
-"#,
+            "#,
         )?;
         let first_instance = Instance::new("publish", "http://localhost:4503", "user2", "pass2");
 
@@ -286,27 +323,29 @@ pass = "pass1"
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = ["prop1", "prop2"]
+            r#"ignore_properties = [{type = "contains", value = "prop1"},
+                                    {type = "contains", value = "prop2"}]
 
-[[profile]]
-name = "author"
-addr = "http://localhost:4502"
-user = "user1"
-pass = "pass1"
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
 
-[[bundle]]
-name = "simple"
-files = ["file1", "file2"]
-
-"#,
+               [[bundle]]
+               name = "simple"
+               files = ["file1", "file2"]
+            "#,
         )?;
         let expected_bundle = Bundle::new("simple", vec!["file1", "file2"]);
 
         // when
+        let cfg = Cfg::load();
+        debug!("result: {:?}", cfg);
         let cfg = Cfg::load()?;
         let bundle = cfg.bundle(Some("simple"));
 
-        // then
+        // // then
         assert_eq!(expected_bundle, bundle);
         Ok(())
     }
@@ -316,23 +355,23 @@ files = ["file1", "file2"]
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = ["prop1", "prop2"]
+            r#"ignore_properties = [{type = "contains", value = "prop1"},
+                                    {type = "contains", value = "prop2"}]
 
-[[profile]]
-name = "author"
-addr = "http://localhost:4502"
-user = "user1"
-pass = "pass1"
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
 
-[[bundle]]
-name = "simple"
-files = ["file1", "file2"]
+               [[bundle]]
+               name = "simple"
+               files = ["file1", "file2"]
 
-[[bundle]]
-name = "other"
-files = ["file3", "file4"]
-
-"#,
+               [[bundle]]
+               name = "other"
+               files = ["file3", "file4"]
+            "#,
         )?;
         let expected_simple_bundle = Bundle::new("simple", vec!["file1", "file2"]);
         let expected_other_bundle = Bundle::new("other", vec!["file3", "file4"]);
@@ -353,15 +392,15 @@ files = ["file3", "file4"]
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = ["prop1", "prop2"]
+            r#"ignore_properties = [{type = "contains", value = "prop1"},
+                                    {type = "contains", value = "prop2"}]
 
-[[profile]]
-name = "author"
-addr = "http://localhost:4502"
-user = "user1"
-pass = "pass1"
-
-"#,
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+            "#,
         )?;
         let expected_bundle = Bundle::default();
 
@@ -381,18 +420,18 @@ pass = "pass1"
         let test_config = TestConfig::new().unwrap();
         test_config
             .write_all(
-                r#"ignore_properties = ["prop1", "prop2"]
+                r#"ignore_properties = [{type = "contains", value = "prop1"},
+                                        {type = "contains", value = "prop2"}]
 
-[[profile]]
-name = "author"
-addr = "http://localhost:4502"
-user = "user1"
-pass = "pass1"
+                   [[profile]]
+                   name = "author"
+                   addr = "http://localhost:4502"
+                   user = "user1"
+                   pass = "pass1"
 
-[[bundle]]
-files = ["file3", "file4"]
-
-"#,
+                   [[bundle]]
+                   files = ["file3", "file4"]
+                "#,
             )
             .unwrap();
 

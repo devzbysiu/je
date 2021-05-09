@@ -1,7 +1,8 @@
-use crate::cfg::Bundle;
+use crate::cfg::{Bundle, IgnoreProp, IgnoreType};
 use crate::path::Path;
 use anyhow::Result;
-use log::{debug, info};
+use log::{debug, info, warn};
+use regex::Regex;
 use std::fs::{self, File, OpenOptions};
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -66,7 +67,7 @@ impl From<DirEntry> for Entry {
     }
 }
 
-pub(crate) fn cleanup_files(ignore_properties: &[String], tmp_dir: &TempDir) -> Result<()> {
+pub(crate) fn cleanup_files(ignore_properties: &[IgnoreProp], tmp_dir: &TempDir) -> Result<()> {
     info!("cleaning files from unwanted properties");
     for entry in WalkDir::new(tmp_dir.path().join("jcr_root"))
         .into_iter()
@@ -102,15 +103,43 @@ fn to_entry(result: std::result::Result<DirEntry, walkdir::Error>) -> Option<Ent
     }
 }
 
-fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[String]) -> Option<String> {
+fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[IgnoreProp]) -> Option<String> {
     let line = line.into();
     let mut result = true;
     for ignore_prop in ignore_properties {
-        debug!("checking if {} contains {}", line, ignore_prop);
-        if line.contains(ignore_prop) {
-            debug!("line {} contains not allowed property, removing", line);
-            result = false;
-            break;
+        match ignore_prop.ignore_type {
+            IgnoreType::Contains => {
+                debug!("checking if '{}' contains '{}'", line, ignore_prop.value);
+                if line.contains(&ignore_prop.value) {
+                    debug!("line '{}' contains not allowed property, removing", line);
+                    result = false;
+                    break;
+                }
+            }
+            IgnoreType::Regex => {
+                debug!(
+                    "checking if '{}' matches regex '{}'",
+                    line, ignore_prop.value
+                );
+                let regex = Regex::new(&ignore_prop.value);
+                if let Err(e) = regex {
+                    warn!(
+                        "regex '{}' is incorrect, skipping: '{}'",
+                        ignore_prop.value, e
+                    );
+                    continue;
+                }
+                // can unwrap because it's checked earlier
+                let regex = regex.unwrap();
+                if regex.is_match(&line) {
+                    debug!(
+                        "line '{}' matches regex '{}', removing",
+                        line, ignore_prop.value
+                    );
+                    result = false;
+                    break;
+                }
+            }
         }
     }
     if result {
@@ -155,7 +184,16 @@ mod test {
     #[test]
     fn test_allowed_prop() {
         // given
-        let ignore_properties = &["cq:lastModified".to_string(), "testProperty".to_string()];
+        let ignore_properties = &[
+            IgnoreProp {
+                ignore_type: IgnoreType::Contains,
+                value: "cq:lastModified".to_string(),
+            },
+            IgnoreProp {
+                ignore_type: IgnoreType::Contains,
+                value: "testProperty".to_string(),
+            },
+        ];
         let test_cases = &[
             ("cq:lastModified", None),
             ("testProperty", None),
@@ -302,10 +340,13 @@ mod test {
     }
 
     #[test]
-    fn test_cleanup_files() -> Result<()> {
+    fn test_cleanup_files_with_type_contains() -> Result<()> {
         let _ = pretty_env_logger::try_init();
         // given
-        let ignore_properties = vec!["property-to-ignore".into()];
+        let ignore_properties = vec![IgnoreProp {
+            ignore_type: IgnoreType::Contains,
+            value: "property-to-ignore".into(),
+        }];
         let tmp_dir = TempDir::new()?;
         create_dir_all(tmp_dir.path().join("jcr_root"))?;
         let mut file = File::create(tmp_dir.path().join("jcr_root/.content.xml"))?;
@@ -325,6 +366,104 @@ other-property"#
         assert_eq!(
             content,
             r#"some-property
+other-property
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_cleanup_files_with_type_regex() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
+        // given
+        let ignore_properties = vec![IgnoreProp {
+            ignore_type: IgnoreType::Regex,
+            value: ".*to.*".into(),
+        }];
+        let tmp_dir = TempDir::new()?;
+        create_dir_all(tmp_dir.path().join("jcr_root"))?;
+        let mut file = File::create(tmp_dir.path().join("jcr_root/.content.xml"))?;
+        file.write_all(
+            r#"some-property
+property-to-ignore
+other-to-property
+"#
+            .as_bytes(),
+        )?;
+
+        // when
+        cleanup_files(&ignore_properties, &tmp_dir)?;
+
+        // then
+        let content = read_to_string(tmp_dir.path().join("jcr_root/.content.xml"))?;
+
+        assert_eq!(
+            content,
+            r#"some-property
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_cleanup_files_with_type_regex_and_complex_value() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
+        // given
+        let ignore_properties = vec![IgnoreProp {
+            ignore_type: IgnoreType::Regex,
+            value: r".*='\[]'".into(),
+        }];
+        let tmp_dir = TempDir::new()?;
+        create_dir_all(tmp_dir.path().join("jcr_root"))?;
+        let mut file = File::create(tmp_dir.path().join("jcr_root/.content.xml"))?;
+        file.write_all(
+            r#"jcr:mixinTypes='[]'
+other-property
+"#
+            .as_bytes(),
+        )?;
+
+        // when
+        cleanup_files(&ignore_properties, &tmp_dir)?;
+
+        // then
+        let content = read_to_string(tmp_dir.path().join("jcr_root/.content.xml"))?;
+
+        assert_eq!(
+            content,
+            r#"other-property
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_cleanup_files_with_type_regex_broken_value() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
+        // given
+        let ignore_properties = vec![IgnoreProp {
+            ignore_type: IgnoreType::Regex,
+            value: "[".into(),
+        }];
+        let tmp_dir = TempDir::new()?;
+        create_dir_all(tmp_dir.path().join("jcr_root"))?;
+        let mut file = File::create(tmp_dir.path().join("jcr_root/.content.xml"))?;
+        file.write_all(
+            r#"jcr:mixinTypes='[]'
+other-property
+"#
+            .as_bytes(),
+        )?;
+
+        // when
+        cleanup_files(&ignore_properties, &tmp_dir)?;
+
+        // then
+        let content = read_to_string(tmp_dir.path().join("jcr_root/.content.xml"))?;
+
+        assert_eq!(
+            content,
+            r#"jcr:mixinTypes='[]'
 other-property
 "#
         );

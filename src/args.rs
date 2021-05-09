@@ -1,4 +1,4 @@
-use crate::cfg::{Bundle, Cfg, Instance};
+use crate::cfg::{Bundle, Cfg, IgnoreProp, Instance};
 use crate::cmd::Opt;
 use crate::path::Path;
 use getset::{CopyGetters, Getters};
@@ -15,7 +15,7 @@ pub(crate) struct GetArgs {
     debug: bool,
 
     #[getset(get = "pub")]
-    ignore_properties: Vec<String>,
+    ignore_properties: Vec<IgnoreProp>,
 }
 
 impl GetArgs {
@@ -63,7 +63,7 @@ pub(crate) struct GetBundleArgs {
     debug: bool,
 
     #[getset(get = "pub")]
-    ignore_properties: Vec<String>,
+    ignore_properties: Vec<IgnoreProp>,
 }
 
 impl GetBundleArgs {
