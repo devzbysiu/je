@@ -30,9 +30,6 @@ getset = "0.1.1"
 bytes = "1.0.1"
 regex = "1.5.3"
 
-[dev-dependencies]
-regex = "1.5.3"
-
 [profile.release]
 opt-level = 's'
 lto = true
