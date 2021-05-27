@@ -10,11 +10,11 @@ mod args;
 mod cfg;
 mod cmd;
 mod fsops;
+mod http;
 mod path;
 mod pkg;
 mod pkgdir;
 mod pkgmgr;
-mod http;
 
 fn main() -> Result<()> {
     let opt = Opt::from_args();

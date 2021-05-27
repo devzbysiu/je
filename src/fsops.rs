@@ -158,6 +158,7 @@ pub(crate) fn mv_files_back(tmp_dir: &TempDir, path: &Path) -> Result<()> {
     info!("moving files from {} to {}", from.display(), path.full());
     list_files(&from);
     if path.is_dir() {
+        info!("{} is dir, removing all", path.full());
         fs::remove_dir_all(path.full())?;
     }
     fs::rename(from, path.full())?;
