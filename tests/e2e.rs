@@ -34,8 +34,10 @@ async fn test_mock() -> Result<()> {
     setup_je_config(&tmp_dir)?;
 
     let content_dir = tmp_dir.path().join("initial-content/jcr_root/content");
-    let file = read_to_string(content_dir.join("test-file"))?;
-    assert_eq!(file, "initial-content");
+    assert_eq!(
+        read_to_string(content_dir.join("test-file"))?,
+        "initial-content"
+    );
 
     // when
     Command::cargo_bin("je")?
