@@ -40,3 +40,4 @@ panic = 'abort'
 assert_cmd = "1.0.4"
 rocket = { git = "https://github.com/SergioBenitez/Rocket" }
 tokio = "1.6.0"
+setup_fs = { path = "/home/zbychu/projects/setup_fs" }
