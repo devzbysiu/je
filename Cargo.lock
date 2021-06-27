@@ -1596,6 +1596,7 @@ dependencies = [
 name = "setup_fs"
 version = "0.1.0"
 dependencies = [
+ "doc-comment",
  "thiserror",
 ]
 

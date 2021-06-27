@@ -11,7 +11,7 @@ use zip::write::FileOptions;
 use zip::ZipWriter;
 
 #[tokio::test]
-async fn test_mock() -> Result<()> {
+async fn e2e_basic_test() -> Result<()> {
     pretty_env_logger::init();
     // given
     let tmp_dir = TempDir::new()?;
@@ -112,7 +112,6 @@ fn setup_je_config(tmp_dir: &TempDir) -> Result<()> {
 mod mock {
     use anyhow::Result;
     use log::{debug, warn};
-    use reqwest::blocking::Client;
     use rocket::form::{Form, FromForm};
     use rocket::http::Status;
     use rocket::{get, post, routes, Build, Config, Rocket, Shutdown, State};
@@ -194,12 +193,6 @@ mod mock {
     #[post("/mock/shutdown")]
     fn shutdown_endpoint(shutdown: Shutdown) {
         shutdown.notify();
-    }
-
-    pub(crate) fn stop() -> Result<()> {
-        let client = Client::new();
-        client.post("http://127.0.0.1:7788/mock/shutdown").send()?;
-        Ok(())
     }
 
     #[derive(FromForm, Debug)]
