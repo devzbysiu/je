@@ -75,9 +75,8 @@ pub(crate) enum Cmd {
     Init,
 }
 
-pub(crate) fn init() -> Result<()> {
+pub(crate) fn init(cfg: &Cfg) -> Result<()> {
     info!("initializing config file ./.je");
-    let cfg = Cfg::default();
     let mut config_file = OpenOptions::new()
         .write(true)
         .truncate(true)
@@ -179,13 +178,14 @@ mod test {
         env::set_current_dir(&tmp_dir)?;
 
         // when
-        init()?;
+        init(&Cfg::default())?;
 
         // then
         let cfg_content = read_to_string("./.je")?;
         assert_eq!(
             cfg_content,
-            r#"ignore_properties = []
+            r#"version = "0.3.0"
+ignore_properties = []
 
 [[profile]]
 name = "author"
@@ -208,13 +208,14 @@ pass = "admin"
         cfg_file.write_all(b"not important")?;
 
         // when
-        init()?;
+        init(&Cfg::default())?;
 
         // then
         let cfg_content = read_to_string("./.je")?;
         assert_eq!(
             cfg_content,
-            r#"ignore_properties = []
+            r#"version = "0.3.0"
+ignore_properties = []
 
 [[profile]]
 name = "author"

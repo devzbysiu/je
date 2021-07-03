@@ -32,7 +32,7 @@ pub(crate) fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
         let walkdir = WalkDir::new(path);
         let mut buffer = Vec::new();
         debug!("zipping {}", path);
-        for entry in &mut walkdir.into_iter().flat_map(Result::ok) {
+        for entry in &mut walkdir.into_iter().filter_map(Result::ok) {
             let path = entry.path();
             if path.is_file() {
                 debug!("{} is a file", path.display());
@@ -107,15 +107,15 @@ mod test {
         zip_pkg(&tmp_dir)?;
 
         // then
-        assert_eq!(Path::new(&tmp_dir.path().join("pkg.zip")).exists(), true);
+        assert!(Path::new(&tmp_dir.path().join("pkg.zip")).exists());
         rename(
             Path::new(&tmp_dir.path().join("pkg.zip")),
             Path::new(&target_dir.path().join("res.zip")),
         )?;
         unzip_pkg(&target_dir)?;
-        assert_eq!(jcr_root_file(&target_dir, "file1").exists(), true);
-        assert_eq!(jcr_root_file(&target_dir, "file2").exists(), true);
-        assert_eq!(jcr_root_file(&target_dir, "file2").exists(), true);
+        assert!(jcr_root_file(&target_dir, "file1").exists());
+        assert!(jcr_root_file(&target_dir, "file2").exists());
+        assert!(jcr_root_file(&target_dir, "file2").exists());
         Ok(())
     }
 

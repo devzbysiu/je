@@ -212,10 +212,7 @@ mod test {
         mk_jcr_root_dir(&tmp_dir)?;
 
         // then
-        assert_eq!(
-            OsPath::new(&format!("{}/jcr_root", tmp_dir.path().display())).exists(),
-            true
-        );
+        assert!(OsPath::new(&format!("{}/jcr_root", tmp_dir.path().display())).exists());
         Ok(())
     }
 
@@ -228,10 +225,7 @@ mod test {
         mk_vault_dir(&tmp_dir)?;
 
         // then
-        assert_eq!(
-            OsPath::new(&format!("{}/META-INF/vault", tmp_dir.path().display())).exists(),
-            true
-        );
+        assert!(OsPath::new(&format!("{}/META-INF/vault", tmp_dir.path().display())).exists());
         Ok(())
     }
 
@@ -245,14 +239,11 @@ mod test {
         write_filter_content(&tmp_dir, &["/content/path".into()])?;
 
         // then
-        assert_eq!(
-            OsPath::new(&format!(
-                "{}/META-INF/vault/filter.xml",
-                tmp_dir.path().display()
-            ))
-            .exists(),
-            true
-        );
+        assert!(OsPath::new(&format!(
+            "{}/META-INF/vault/filter.xml",
+            tmp_dir.path().display()
+        ))
+        .exists());
         let filter_contents = read_to_string(format!(
             "{}/META-INF/vault/filter.xml",
             tmp_dir.path().display()
@@ -279,14 +270,11 @@ mod test {
         write_properties_content(&tmp_dir, &pkg)?;
 
         // then
-        assert_eq!(
-            OsPath::new(&format!(
-                "{}/META-INF/vault/properties.xml",
-                tmp_dir.path().display()
-            ))
-            .exists(),
-            true
-        );
+        assert!(OsPath::new(&format!(
+            "{}/META-INF/vault/properties.xml",
+            tmp_dir.path().display()
+        ))
+        .exists());
         let properties_contents = read_to_string(format!(
             "{}/META-INF/vault/properties.xml",
             tmp_dir.path().display()
@@ -317,18 +305,12 @@ mod test {
         let tmp_dir_path = mksimple(&file_path, &pkg)?;
 
         // then
-        assert_eq!(
-            OsPath::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists(),
-            true
-        );
-        assert_eq!(
-            OsPath::new(&format!(
-                "{}/META-INF/vault/filter.xml",
-                tmp_dir_path.path().display()
-            ))
-            .exists(),
-            true
-        );
+        assert!(OsPath::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists());
+        assert!(OsPath::new(&format!(
+            "{}/META-INF/vault/filter.xml",
+            tmp_dir_path.path().display()
+        ))
+        .exists());
         let filter_contents = read_to_string(format!(
             "{}/META-INF/vault/filter.xml",
             tmp_dir_path.path().display()
@@ -341,14 +323,11 @@ mod test {
 </workspaceFilter>
 "#,
         );
-        assert_eq!(
-            OsPath::new(&format!(
-                "{}/META-INF/vault/properties.xml",
-                tmp_dir_path.path().display()
-            ))
-            .exists(),
-            true
-        );
+        assert!(OsPath::new(&format!(
+            "{}/META-INF/vault/properties.xml",
+            tmp_dir_path.path().display()
+        ))
+        .exists());
 
         Ok(())
     }
@@ -407,18 +386,12 @@ mod test {
         let tmp_dir_path = mkbundle(&bundle, &pkg)?;
 
         // then
-        assert_eq!(
-            OsPath::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists(),
-            true
-        );
-        assert_eq!(
-            OsPath::new(&format!(
-                "{}/META-INF/vault/filter.xml",
-                tmp_dir_path.path().display()
-            ))
-            .exists(),
-            true
-        );
+        assert!(OsPath::new(&format!("{}/jcr_root", tmp_dir_path.path().display())).exists());
+        assert!(OsPath::new(&format!(
+            "{}/META-INF/vault/filter.xml",
+            tmp_dir_path.path().display()
+        ))
+        .exists());
         let filter_contents = read_to_string(format!(
             "{}/META-INF/vault/filter.xml",
             tmp_dir_path.path().display()
@@ -432,14 +405,11 @@ mod test {
 </workspaceFilter>
 "#,
         );
-        assert_eq!(
-            OsPath::new(&format!(
-                "{}/META-INF/vault/properties.xml",
-                tmp_dir_path.path().display()
-            ))
-            .exists(),
-            true
-        );
+        assert!(OsPath::new(&format!(
+            "{}/META-INF/vault/properties.xml",
+            tmp_dir_path.path().display()
+        ))
+        .exists());
 
         Ok(())
     }
@@ -453,7 +423,7 @@ mod test {
         clean(&tmp_dir)?;
 
         // then
-        assert_eq!(tmp_dir.path().read_dir()?.next().is_none(), true);
+        assert!(tmp_dir.path().read_dir()?.next().is_none());
 
         Ok(())
     }
@@ -471,7 +441,7 @@ mod test {
         clean(&tmp_dir)?;
 
         // then
-        assert_eq!(tmp_dir.path().read_dir()?.next().is_none(), true);
+        assert!(tmp_dir.path().read_dir()?.next().is_none());
 
         Ok(())
     }

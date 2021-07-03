@@ -111,7 +111,7 @@ mod test {
         let tmp_dir = TempDir::new()?;
 
         // then
-        assert_eq!(Path::new(tmp_dir.path().to_str().unwrap()).is_dir(), true);
+        assert!(Path::new(tmp_dir.path().to_str().unwrap()).is_dir());
         Ok(())
     }
 
@@ -121,7 +121,7 @@ mod test {
         let tmp_file = NamedTempFile::new()?;
 
         // then
-        assert_eq!(Path::new(tmp_file.path().to_str().unwrap()).is_dir(), false);
+        assert!(!Path::new(tmp_file.path().to_str().unwrap()).is_dir());
         Ok(())
     }
 
