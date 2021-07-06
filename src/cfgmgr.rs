@@ -6,19 +6,18 @@ use std::env;
 use std::fs::read_to_string;
 use std::path::Path;
 
-pub(crate) const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub(crate) const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub(crate) fn handle_cfg_load() -> Result<Cfg> {
     debug!("loading config from {:?}.je", env::current_dir());
     if Path::new(".je").exists() {
         let cfg: Cfg = toml::from_str(&read_to_string(".je")?)?;
         Ok(match cfg.version {
-            None => reinit_config_with_current_version(cfg)?,
-            Some(ref ver) if ver != VERSION => reinit_config_with_current_version(cfg)?,
-            Some(ref _current_version) => {
+            Some(ref read_version) if read_version == CURRENT_VERSION => {
                 info!("config file with current version");
                 cfg
             }
+            None | Some(_) => reinit_config_with_current_version(cfg)?,
         })
     } else {
         debug!(".je config doesn't exists, loading default");
@@ -28,7 +27,7 @@ pub(crate) fn handle_cfg_load() -> Result<Cfg> {
 
 fn reinit_config_with_current_version(mut cfg: Cfg) -> Result<Cfg> {
     debug!("adjusting configuration to a newer version");
-    cfg.version = Some(VERSION.to_string());
+    cfg.version = Some(CURRENT_VERSION.to_string());
     cmd::init(&cfg)?;
     Ok(cfg)
 }

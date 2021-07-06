@@ -1,4 +1,4 @@
-use crate::cfgmgr::VERSION;
+use crate::cfgmgr::CURRENT_VERSION;
 use getset::Getters;
 use serde_derive::{Deserialize, Serialize};
 use std::convert::Into;
@@ -47,7 +47,7 @@ impl Cfg {
 impl Default for Cfg {
     fn default() -> Self {
         Self {
-            version: Some(VERSION.to_string()),
+            version: Some(CURRENT_VERSION.to_string()),
             profiles: vec![Instance::new(
                 "author",
                 "http://localhost:4502",

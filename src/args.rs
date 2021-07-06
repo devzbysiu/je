@@ -76,3 +76,49 @@ impl GetBundleArgs {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cfg::IgnoreType;
+
+    #[test]
+    fn test_get_args_creation() {
+        // given
+        let path = "/some/path";
+        let cfg = Cfg {
+            ignore_properties: vec![IgnoreProp {
+                ignore_type: IgnoreType::Contains,
+                value: "some value".into(),
+            }],
+            profiles: vec![
+                Instance::new("author-1", "http://localhost:4502", "admin", "admin"),
+                Instance::new("publish-1", "http://localhost:4503", "admin", "admin"),
+            ],
+            ..Cfg::default()
+        };
+        let opt = Opt {
+            debug: false,
+            profile: Some("author-1".into()),
+            ..Opt::default()
+        };
+        let expected = GetArgs {
+            path: Path::new("/some/path"),
+            instance: Instance::new("author-1", "http://localhost:4502", "admin", "admin"),
+            debug: false,
+            ignore_properties: vec![IgnoreProp {
+                ignore_type: crate::cfg::IgnoreType::Contains,
+                value: "some value".into(),
+            }],
+        };
+
+        // when
+        let get_args = GetArgs::new(path, cfg, &opt);
+
+        // then
+        assert_eq!(expected.path.full(), get_args.path.full());
+        assert_eq!(expected.instance, get_args.instance);
+        assert_eq!(expected.debug, get_args.debug);
+        assert_eq!(expected.ignore_properties, get_args.ignore_properties);
+    }
+}
