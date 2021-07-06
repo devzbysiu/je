@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - 2021-09-05
 ### Added
+- Mechanism for adjusting the old configuration file to the new one
 - Support for bundles (packs of files)
 - Regex type mechanism for ignoring properties
 

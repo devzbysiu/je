@@ -4,3 +4,4 @@
 cobertura.xml
 tarpaulin-report.html
 .je
+.vimspector.json

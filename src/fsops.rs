@@ -223,7 +223,7 @@ mod test {
         let is_file = entry.is_file();
 
         // then
-        assert_eq!(is_file, true);
+        assert!(is_file);
 
         Ok(())
     }
@@ -238,7 +238,7 @@ mod test {
         let is_file = entry.is_file();
 
         // then
-        assert_eq!(is_file, false);
+        assert!(!is_file);
 
         Ok(())
     }
@@ -256,7 +256,7 @@ mod test {
         let is_xml = entry.is_content_xml();
 
         // then
-        assert_eq!(is_xml, false);
+        assert!(!is_xml);
 
         Ok(())
     }
@@ -274,7 +274,7 @@ mod test {
         let is_xml = entry.is_xml_file();
 
         // then
-        assert_eq!(is_xml, true);
+        assert!(is_xml);
 
         Ok(())
     }
@@ -301,7 +301,7 @@ mod test {
         mv_files_back(&src_dir, &path)?;
 
         // then
-        assert_eq!(target_dir.path().join("jcr_root/some-file").exists(), true);
+        assert!(target_dir.path().join("jcr_root/some-file").exists());
         Ok(())
     }
 
@@ -327,13 +327,10 @@ mod test {
         mv_files_back(&src_dir, &path)?;
 
         // then
-        assert_eq!(
-            target_dir
-                .path()
-                .join("jcr_root/some-dir/some-file")
-                .exists(),
-            true
-        );
+        assert!(target_dir
+            .path()
+            .join("jcr_root/some-dir/some-file")
+            .exists());
         Ok(())
     }
 

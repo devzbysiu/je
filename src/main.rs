@@ -8,6 +8,7 @@ use structopt::StructOpt;
 
 mod args;
 mod cfg;
+mod cfgmgr;
 mod cmd;
 mod fsops;
 mod http;
@@ -26,15 +27,15 @@ fn main() -> Result<()> {
     info!("starting");
     let cmd = opt.cmd.clone();
     match cmd {
-        Cmd::Init => cmd::init()?,
+        Cmd::Init => cmd::init(&Cfg::default())?,
         other => {
-            let cfg = Cfg::load()?;
+            let cfg = cfgmgr::handle_cfg_load()?;
             debug!("read config: {:#?}", cfg);
             match other {
                 Cmd::Get { path } => cmd::get(&GetArgs::new(path, cfg, &opt))?,
                 Cmd::GetBundle { name } => cmd::get_bundle(&GetBundleArgs::new(name, cfg, &opt))?,
                 Cmd::Put { path } => cmd::put(&PutArgs::new(path, &cfg, &opt))?,
-                _ => unreachable!("This code branch will never be executed"),
+                Cmd::Init => unreachable!("This code branch will never be executed"),
             }
         }
     }
