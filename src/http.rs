@@ -8,7 +8,7 @@ use reqwest::blocking::{Client as HttpClient, Response as Resp};
 use std::path::Path;
 
 // the `Option<Resp>` here is not-so-elegant solution for mocking
-// the response int the mock client implementations
+// the response in the mock client implementations
 #[derive(Debug)]
 pub(crate) struct Response(pub(crate) Option<Resp>);
 
