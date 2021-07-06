@@ -121,4 +121,79 @@ mod tests {
         assert_eq!(expected.debug, get_args.debug);
         assert_eq!(expected.ignore_properties, get_args.ignore_properties);
     }
+
+    #[test]
+    fn test_put_args_creation() {
+        // given
+        let path = "/some/path";
+        let cfg = Cfg {
+            profiles: vec![
+                Instance::new("int-author", "http://localhost:4502", "admin", "admin"),
+                Instance::new("int-publish", "http://localhost:4503", "admin", "admin"),
+            ],
+            ..Cfg::default()
+        };
+        let opt = Opt {
+            debug: true,
+            profile: Some("int-publish".into()),
+            ..Opt::default()
+        };
+        let expected = PutArgs {
+            path: Path::new("/some/path"),
+            instance: Instance::new("int-publish", "http://localhost:4503", "admin", "admin"),
+            debug: true,
+        };
+
+        // when
+        let actual = PutArgs::new(path, &cfg, &opt);
+
+        // then
+        assert_eq!(expected.path.full(), actual.path.full());
+        assert_eq!(expected.instance, actual.instance);
+        assert_eq!(expected.debug, actual.debug);
+    }
+
+    #[test]
+    fn test_get_bundle_args_creation() {
+        // given
+        let bundle_name = "test-bundle";
+        let cfg = Cfg {
+            ignore_properties: vec![IgnoreProp {
+                ignore_type: IgnoreType::Contains,
+                value: "other value".into(),
+            }],
+            bundles: Some(vec![
+                Bundle::new("test-bundle", vec!["/some/file"]),
+                Bundle::new("other", vec!["/different/file"]),
+            ]),
+            profiles: vec![
+                Instance::new("prod-author", "http://localhost:4502", "admin", "admin"),
+                Instance::new("prod-publish", "http://localhost:4503", "admin", "admin"),
+            ],
+            ..Cfg::default()
+        };
+        let opt = Opt {
+            debug: false,
+            profile: Some("prod-author".into()),
+            ..Opt::default()
+        };
+        let expected = GetBundleArgs {
+            bundle: Bundle::new("test-bundle", vec!["/some/file"]),
+            instance: Instance::new("prod-author", "http://localhost:4502", "admin", "admin"),
+            debug: false,
+            ignore_properties: vec![IgnoreProp {
+                ignore_type: crate::cfg::IgnoreType::Contains,
+                value: "other value".into(),
+            }],
+        };
+
+        // when
+        let actual = GetBundleArgs::new(bundle_name, cfg, &opt);
+
+        // then
+        assert_eq!(expected.bundle, actual.bundle);
+        assert_eq!(expected.instance, actual.instance);
+        assert_eq!(expected.debug, actual.debug);
+        assert_eq!(expected.ignore_properties, actual.ignore_properties);
+    }
 }
