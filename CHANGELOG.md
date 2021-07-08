@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for bundles (packs of files)
 - Regex type mechanism for ignoring properties
 
+### Changed
+- Fix issue with cross-partition file move on windows
+
 ## [0.2.0] - 2020-25-10
 ### Added
 
