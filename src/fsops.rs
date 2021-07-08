@@ -1,6 +1,7 @@
 use crate::cfg::{Bundle, IgnoreProp, IgnoreType};
 use crate::path::Path;
-use anyhow::Result;
+use anyhow::{Context, Result};
+use fs_extra::{dir, file};
 use log::{debug, info, warn};
 use regex::Regex;
 use std::fs::{self, File, OpenOptions};
@@ -153,14 +154,48 @@ pub(crate) fn mv_bundle_back(tmp_dir: &TempDir, bundle: &Bundle) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn mv_files_back(tmp_dir: &TempDir, path: &Path) -> Result<()> {
-    let from = tmp_dir.path().join(path.from_root());
-    info!("moving files from {} to {}", from.display(), path.full());
-    list_files(&from);
-    if path.is_dir() {
-        fs::remove_dir_all(path.full())?;
+pub(crate) fn mv_files_back(tmp_dir: &TempDir, target: &Path) -> Result<()> {
+    let source = tmp_dir.path().join(target.from_root());
+    info!(
+        "moving files from {} to {}",
+        source.display(),
+        target.full()
+    );
+    list_files(&source);
+    if target.is_dir() {
+        move_dir(source, target)?;
+    } else {
+        overwrite_file(source, target)?;
     }
-    fs::rename(from, path.full())?;
+    Ok(())
+}
+
+fn move_dir<A: AsRef<OsPath>>(from: A, to: &Path) -> Result<()> {
+    debug!("{} is a dir, removing all", to.full());
+    fs::remove_dir_all(to.full())?;
+    let cp = dir::CopyOptions {
+        copy_inside: true,
+        ..dir::CopyOptions::default()
+    };
+    dir::move_dir(&from, to.full(), &cp).context(format!(
+        "failed to move dir from {} to {}",
+        from.as_ref().display(),
+        to.full()
+    ))?;
+    Ok(())
+}
+
+fn overwrite_file<A: AsRef<OsPath>>(source: A, target: &Path) -> Result<()> {
+    debug!("{} is a file, overwriting", target.full());
+    let cp = file::CopyOptions {
+        overwrite: true,
+        ..file::CopyOptions::default()
+    };
+    file::move_file(&source, target.full(), &cp).context(format!(
+        "failed to move file from {} to {}",
+        source.as_ref().display(),
+        target.full()
+    ))?;
     Ok(())
 }
 
@@ -280,6 +315,7 @@ mod test {
 
     #[test]
     fn test_mv_files_back_with_regular_file() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let src_dir = TempDir::new()?;
         create_dir_all(src_dir.path().join("jcr_root"))?;
@@ -306,6 +342,7 @@ mod test {
 
     #[test]
     fn test_mv_files_back_with_directory() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let src_dir = TempDir::new()?;
         create_dir_all(src_dir.path().join("jcr_root/some-dir"))?;
