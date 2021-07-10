@@ -84,3 +84,24 @@ impl Client for AemClient<'_> {
         )))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use base64::decode;
+
+    #[test]
+    fn test_encoced_creds() {
+        // given
+        let instance = Instance::new("NOT IMPORTANT", "NOT IMPORTANT", "user-name", "password");
+
+        // when
+        let res = encoded_creds(&&instance);
+
+        // then
+        assert_eq!(
+            String::from_utf8(decode(res).unwrap()).unwrap(),
+            "user-name:password"
+        );
+    }
+}
