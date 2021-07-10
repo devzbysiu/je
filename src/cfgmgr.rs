@@ -1,35 +1,75 @@
-use crate::cfg::Cfg;
+use crate::cfg::{Bundle, Cfg, IgnoreProp, IgnoreType, Instance};
 use crate::cmd;
 use anyhow::Result;
 use log::{debug, info};
+use serde_derive::{Deserialize, Serialize};
 use std::env;
 use std::fs::read_to_string;
 use std::path::Path;
 
+pub(crate) const CONFIG_FILE: &str = ".je";
+
 pub(crate) const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) struct Version {
+    #[serde(rename = "version")]
+    value: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct Pre030Cfg {
+    pub(crate) ignore_properties: Vec<String>,
+
+    #[serde(rename = "profile")]
+    pub(crate) profiles: Vec<Instance>,
+
+    #[serde(rename = "bundle")]
+    pub(crate) bundles: Option<Vec<Bundle>>,
+}
+
 pub(crate) fn handle_cfg_load() -> Result<Cfg> {
-    debug!("loading config from {:?}.je", env::current_dir());
-    if Path::new(".je").exists() {
-        let cfg: Cfg = toml::from_str(&read_to_string(".je")?)?;
-        Ok(match cfg.version {
-            Some(ref read_version) if read_version == CURRENT_VERSION => {
-                info!("config file with current version");
-                cfg
-            }
-            None | Some(_) => reinit_config_with_current_version(cfg)?,
-        })
+    debug!("loading config: {:?}{}", env::current_dir(), CONFIG_FILE);
+    if Path::new(CONFIG_FILE).exists() {
+        let config_content = read_to_string(CONFIG_FILE)?;
+        debug!("read config: {}", config_content);
+        let version: Version = toml::from_str(&config_content)?;
+        debug!("version: {:#?}", version);
+        if version.value.is_none() {
+            // old, not versioned configuration
+            let cfg: Pre030Cfg = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
+            reinit_config_with_current_version(cfg)
+        } else {
+            // new configuration, for now no transformation needed
+            Ok(toml::from_str::<Cfg>(&read_to_string(CONFIG_FILE)?)?)
+        }
     } else {
         debug!(".je config doesn't exists, loading default");
         Ok(Cfg::default())
     }
 }
 
-fn reinit_config_with_current_version(mut cfg: Cfg) -> Result<Cfg> {
+fn reinit_config_with_current_version(cfg: Pre030Cfg) -> Result<Cfg> {
     debug!("adjusting configuration to a newer version");
-    cfg.version = Some(CURRENT_VERSION.to_string());
-    cmd::init(&cfg)?;
-    Ok(cfg)
+    let res = Cfg {
+        version: Some(CURRENT_VERSION.to_string()),
+        ignore_properties: adjust_ignore_props(cfg.ignore_properties),
+        profiles: cfg.profiles,
+        ..Cfg::default()
+    };
+    cmd::init(&res)?;
+    Ok(res)
+}
+
+fn adjust_ignore_props(props: Vec<String>) -> Vec<IgnoreProp> {
+    let mut res = Vec::new();
+    for prop in props {
+        res.push(IgnoreProp {
+            ignore_type: IgnoreType::Contains,
+            value: prop,
+        });
+    }
+    res
 }
 
 #[cfg(test)]
@@ -45,6 +85,7 @@ mod test {
 
     #[test]
     fn test_handle_cfg_load_when_config_not_exists() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let expected_profiles = vec![Instance::new(
             "author",
@@ -67,11 +108,12 @@ mod test {
     }
 
     #[test]
-    fn test_handle_cfg_load_when_config_exists_but_is_from_older_version() -> Result<()> {
+    fn test_handle_cfg_load_when_config_exists_but_is_from_pre_030_version() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = []
+            r#"ignore_properties = ["jcr:created", "jcr:createdBy"]
 
                [[profile]]
                name = "author"
@@ -87,7 +129,16 @@ mod test {
             "user1",
             "pass1",
         )];
-        let expected_ignore_props = vec![];
+        let expected_ignore_props = vec![
+            IgnoreProp {
+                ignore_type: IgnoreType::Contains,
+                value: "jcr:created".to_string(),
+            },
+            IgnoreProp {
+                ignore_type: IgnoreType::Contains,
+                value: "jcr:createdBy".to_string(),
+            },
+        ];
         let expected_version = Some("0.3.0".into());
 
         // when
@@ -103,6 +154,7 @@ mod test {
 
     #[test]
     fn test_handle_cfg_load_when_config_is_not_available() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // when
         let cfg = handle_cfg_load()?;
 
@@ -122,10 +174,12 @@ mod test {
 
     #[test]
     fn test_instance_with_existing_profile() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = [{type = "contains", value = "prop1"}, 
+            r#"version = "0.3.0"
+               ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
                [[profile]]
@@ -148,10 +202,12 @@ mod test {
 
     #[test]
     fn test_instance_with_not_existing_profile() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = [{type = "contains", value = "prop1"},
+            r#"version = "0.3.0"
+               ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
                [[profile]]
@@ -174,10 +230,12 @@ mod test {
 
     #[test]
     fn test_instance_when_no_profile_was_selected() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = [{type = "contains", value = "prop1"},
+            r#"version = "0.3.0"
+               ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
                [[profile]]
@@ -207,10 +265,12 @@ mod test {
 
     #[test]
     fn test_bundles_when_bundle_defined() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = [{type = "contains", value = "prop1"},
+            r#"version = "0.3.0"
+               ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
                [[profile]]
@@ -239,10 +299,12 @@ mod test {
 
     #[test]
     fn test_bundles_when_multiple_bundles_defined() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = [{type = "contains", value = "prop1"},
+            r#"version = "0.3.0"
+               ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
                [[profile]]
@@ -276,10 +338,12 @@ mod test {
 
     #[test]
     fn test_bundles_when_no_bundle() -> Result<()> {
+        let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
         test_config.write_all(
-            r#"ignore_properties = [{type = "contains", value = "prop1"},
+            r#"version = "0.3.0"
+               ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
                [[profile]]
@@ -303,11 +367,13 @@ mod test {
     #[test]
     #[should_panic]
     fn test_bundles_when_bundle_broken() {
+        let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new().unwrap();
         test_config
             .write_all(
-                r#"ignore_properties = [{type = "contains", value = "prop1"},
+                r#"version = "0.3.0"
+                   ignore_properties = [{type = "contains", value = "prop1"},
                                         {type = "contains", value = "prop2"}]
 
                    [[profile]]
