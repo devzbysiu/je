@@ -144,7 +144,7 @@ downloading the content; currently, two types of ignoring mechanisms are availab
     file pack to synchronize
   - `paths` - which file paths are part of the bundle
 
-> :warn: If you used pre 0.3.0 version of `je`, then the new version will try to transform the
+> :warning: If you used pre 0.3.0 version of `je`, then the new version will try to transform the
 configuration file to the new form. Details below.
 <details>
   <summary>Details</summary>
@@ -154,7 +154,7 @@ configuration file to the new form. Details below.
   ```toml
   ignore_properties = ["jcr:created", "jcr:createdBy"]
 
-  (...)
+  # (...)
   ```
   to
   ```toml
@@ -168,14 +168,14 @@ configuration file to the new form. Details below.
   type = "contains"
   value = "jcr:createdBy"
 
-  (...)
+  # (...)
   ```
   which is equivalent to:
   ```toml
-  ignore_properties = [{type = "contains", value = "jcr:created"}
+  ignore_properties = [{type = "contains", value = "jcr:created"},
                        {type = "contains", value = "jcr:createdBy"}]
 
-  (...)
+  # (...)
   ```
 
   You can use any of those two formats.
