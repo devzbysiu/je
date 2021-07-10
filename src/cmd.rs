@@ -1,5 +1,6 @@
 use crate::args::{GetArgs, GetBundleArgs, PutArgs};
 use crate::cfg::Cfg;
+use crate::cfgmgr::CONFIG_FILE;
 use crate::fsops;
 use crate::http::AemClient;
 use crate::path::Path;
@@ -76,12 +77,12 @@ pub(crate) enum Cmd {
 }
 
 pub(crate) fn init(cfg: &Cfg) -> Result<()> {
-    info!("initializing config file ./.je");
+    info!("initializing config file ./{}", CONFIG_FILE);
     let mut config_file = OpenOptions::new()
         .write(true)
         .truncate(true)
         .create(true)
-        .open(".je")?;
+        .open(CONFIG_FILE)?;
     config_file.write_all(toml::to_string(&cfg)?.as_bytes())?;
     Ok(())
 }

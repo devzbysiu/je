@@ -1,4 +1,4 @@
-use crate::cfg::{Bundle, Cfg, IgnoreProp, IgnoreType, Instance};
+use crate::cfg::{Cfg, IgnoreProp, IgnoreType, Instance};
 use crate::cmd;
 use anyhow::Result;
 use log::{debug, info};
@@ -23,18 +23,12 @@ struct Pre030Cfg {
 
     #[serde(rename = "profile")]
     pub(crate) profiles: Vec<Instance>,
-
-    #[serde(rename = "bundle")]
-    pub(crate) bundles: Option<Vec<Bundle>>,
 }
 
 pub(crate) fn handle_cfg_load() -> Result<Cfg> {
     debug!("loading config: {:?}{}", env::current_dir(), CONFIG_FILE);
     if Path::new(CONFIG_FILE).exists() {
-        let config_content = read_to_string(CONFIG_FILE)?;
-        debug!("read config: {}", config_content);
-        let version: Version = toml::from_str(&config_content)?;
-        debug!("version: {:#?}", version);
+        let version: Version = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
         if version.value.is_none() {
             // old, not versioned configuration
             let cfg: Pre030Cfg = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
@@ -44,19 +38,20 @@ pub(crate) fn handle_cfg_load() -> Result<Cfg> {
             Ok(toml::from_str::<Cfg>(&read_to_string(CONFIG_FILE)?)?)
         }
     } else {
-        debug!(".je config doesn't exists, loading default");
+        debug!("{} config doesn't exists, loading default", CONFIG_FILE);
         Ok(Cfg::default())
     }
 }
 
 fn reinit_config_with_current_version(cfg: Pre030Cfg) -> Result<Cfg> {
-    debug!("adjusting configuration to a newer version");
+    info!("adjusting configuration to a newer version");
     let res = Cfg {
         version: Some(CURRENT_VERSION.to_string()),
         ignore_properties: adjust_ignore_props(cfg.ignore_properties),
         profiles: cfg.profiles,
         ..Cfg::default()
     };
+    debug!("config after adjustments: {:#?}", res);
     cmd::init(&res)?;
     Ok(res)
 }
