@@ -144,6 +144,43 @@ downloading the content; currently, two types of ignoring mechanisms are availab
     file pack to synchronize
   - `paths` - which file paths are part of the bundle
 
+> :warn: If you used pre 0.3.0 version of `je`, then the new version will try to transform the
+configuration file to the new form. Details below.
+<details>
+  <summary>Details</summary>
+  This section is the result of <a href=https://github.com/alexcrichton/toml-rs/issues/265>this issue</a>.
+
+  `je` will change:
+  ```toml
+  ignore_properties = ["jcr:created", "jcr:createdBy"]
+
+  (...)
+  ```
+  to
+  ```toml
+  version = "0.3.0"
+  
+  [[ignore_properties]]
+  type = "contains"
+  value = "jcr:created"
+
+  [[ignore_properties]]
+  type = "contains"
+  value = "jcr:createdBy"
+
+  (...)
+  ```
+  which is equivalent to:
+  ```toml
+  ignore_properties = [{type = "contains", value = "jcr:created"}
+                       {type = "contains", value = "jcr:createdBy"}]
+
+  (...)
+  ```
+
+  You can use any of those two formats.
+</details>
+
 ### IntelliJ Setup
 
 #### Add `je` commands:
