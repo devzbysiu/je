@@ -130,8 +130,8 @@ mod test {
             archive_files,
             hashset! {
                 "jcr_root/".into(),
-                "jcr_root/file2".into(),
                 "jcr_root/file1".into(),
+                "jcr_root/file2".into(),
                 "jcr_root/file3".into(),
                 "META-INF/".into(),
                 "META-INF/vault/".into(),
