@@ -99,6 +99,8 @@ pub(crate) fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
 mod test {
     use super::*;
     use anyhow::Result;
+    use maplit::hashset;
+    use std::collections::HashSet;
     use std::fs::{create_dir, create_dir_all, rename, File};
     use std::path::{Path, PathBuf};
     use tempfile::TempDir;
@@ -126,16 +128,16 @@ mod test {
 
         assert_eq!(
             archive_files,
-            vec![
-                "jcr_root/",
-                "jcr_root/file2",
-                "jcr_root/file1",
-                "jcr_root/file3",
-                "META-INF/",
-                "META-INF/vault/",
-                "META-INF/vault/properties.xml",
-                "META-INF/vault/filter.xml"
-            ]
+            hashset! {
+                "jcr_root/".into(),
+                "jcr_root/file2".into(),
+                "jcr_root/file1".into(),
+                "jcr_root/file3".into(),
+                "META-INF/".into(),
+                "META-INF/vault/".into(),
+                "META-INF/vault/properties.xml".into(),
+                "META-INF/vault/filter.xml".into()
+            }
         );
         Ok(())
     }
@@ -150,13 +152,13 @@ mod test {
         Path::new(&dir.rel_path(path)).to_path_buf()
     }
 
-    fn archive_files_list<A: AsRef<Path>>(path: A) -> Result<Vec<String>> {
+    fn archive_files_list<A: AsRef<Path>>(path: A) -> Result<HashSet<String>> {
         let mut archive = ZipArchive::new(File::open(path)?)?;
 
-        let mut archive_files = Vec::new();
+        let mut archive_files = HashSet::new();
         for i in 0..archive.len() {
             let file = archive.by_index(i)?;
-            archive_files.push(file.name().to_string());
+            archive_files.insert(file.name().to_string());
         }
         Ok(archive_files)
     }
