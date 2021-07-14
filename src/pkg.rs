@@ -1,5 +1,6 @@
 use anyhow::Result;
 use log::{debug, info};
+use path_slash::PathExt;
 use std::env;
 use std::fs::{create_dir_all, File};
 use std::io;
@@ -47,14 +48,14 @@ pub(crate) fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
             let path = entry.path();
             if path.is_file() {
                 debug!("{} is a file", path.display());
-                zip.start_file(path.display().to_string(), options)?;
+                zip.start_file(path.to_slash_lossy(), options)?;
                 let mut f = File::open(path)?;
                 f.read_to_end(&mut buffer)?;
                 zip.write_all(&*buffer)?;
                 buffer.clear();
             } else {
                 debug!("{} is a dir", path.display());
-                zip.add_directory(path.display().to_string(), options)?;
+                zip.add_directory(path.to_slash_lossy(), options)?;
             }
         }
     }

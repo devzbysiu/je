@@ -75,7 +75,7 @@ fn write_filter_content(tmp_dir: &TempDir, content_paths: &[String]) -> Result<(
     Ok(())
 }
 
-fn filter_content(path: &[String]) -> String {
+fn filter_content(paths: &[String]) -> String {
     let filter_prefix = r#"<?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">"#;
     let filter_postfix = "</workspaceFilter>";
@@ -85,7 +85,7 @@ fn filter_content(path: &[String]) -> String {
 {}
 "#,
         filter_prefix,
-        write_filters(path),
+        write_filters(paths),
         filter_postfix,
     )
 }

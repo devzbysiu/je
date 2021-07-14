@@ -29,6 +29,7 @@ fs_extra = "1.2.0"
 getset = "0.1.1"
 bytes = "1.0.1"
 regex = "1.5.3"
+path-slash = "0.1.4"
 
 [dev-dependencies]
 maplit = "1.0.2"
