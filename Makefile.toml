@@ -3,7 +3,7 @@ env_files = [
 ]
 
 [tasks.format]
-install_create = "rustfmt"
+install_crate = "rustfmt"
 command = "cargo"
 args = ["fmt"]
 
@@ -12,7 +12,7 @@ command = "cargo"
 args = ["check"]
 
 [tasks.clippy]
-install_create = "clippy"
+install_crate = "clippy"
 command = "cargo"
 args = ["clippy", "--all-targets", "--all-features", "--", "-W", "clippy::pedantic", "-D", "warnings"]
 
