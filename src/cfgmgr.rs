@@ -1,5 +1,4 @@
 use crate::cfg::{Cfg, IgnoreProp, IgnoreType, Instance};
-use crate::cmd;
 use anyhow::Result;
 use log::{debug, info};
 use serde_derive::{Deserialize, Serialize};
@@ -14,7 +13,7 @@ pub(crate) const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub(crate) struct Version {
     #[serde(rename = "version")]
-    value: Option<String>,
+    pub(crate) value: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -30,11 +29,10 @@ pub(crate) fn handle_cfg_load() -> Result<Cfg> {
     if Path::new(CONFIG_FILE).exists() {
         let version: Version = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
         if version.value.is_none() {
-            // old, not versioned configuration
             let cfg: Pre030Cfg = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
-            reinit_config_with_current_version(cfg)
+            convert_to_current_cfg(cfg)
         } else {
-            // new configuration, for now no transformation needed
+            // new configuration
             Ok(toml::from_str::<Cfg>(&read_to_string(CONFIG_FILE)?)?)
         }
     } else {
@@ -43,7 +41,7 @@ pub(crate) fn handle_cfg_load() -> Result<Cfg> {
     }
 }
 
-fn reinit_config_with_current_version(cfg: Pre030Cfg) -> Result<Cfg> {
+fn convert_to_current_cfg(cfg: Pre030Cfg) -> Result<Cfg> {
     info!("adjusting configuration to a newer version");
     let res = Cfg {
         version: Some(CURRENT_VERSION.to_string()),
@@ -52,7 +50,6 @@ fn reinit_config_with_current_version(cfg: Pre030Cfg) -> Result<Cfg> {
         ..Cfg::default()
     };
     debug!("config after adjustments: {:#?}", res);
-    cmd::init(&res)?;
     Ok(res)
 }
 
@@ -107,16 +104,15 @@ mod test {
         let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
-        test_config.write_all(
-            r#"ignore_properties = ["jcr:created", "jcr:createdBy"]
+        let original_cfg_content = r#"ignore_properties = ["jcr:created", "jcr:createdBy"]
 
                [[profile]]
                name = "author"
                addr = "http://localhost:4502"
                user = "user1"
                pass = "pass1"
-            "#,
-        )?;
+            "#;
+        test_config.write_all(original_cfg_content)?;
 
         let expected_profiles = vec![Instance::new(
             "author",
@@ -143,6 +139,8 @@ mod test {
         assert_eq!(cfg.version, expected_version);
         assert_eq!(cfg.ignore_properties, expected_ignore_props);
         assert_eq!(cfg.profiles, expected_profiles);
+        // do not rewrite config event when version doesn't match
+        assert_eq!(original_cfg_content, test_config.read_all()?);
 
         Ok(())
     }
@@ -172,8 +170,7 @@ mod test {
         let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
-        test_config.write_all(
-            r#"version = "0.3.0"
+        let original_cfg_content = r#"version = "0.3.0"
                ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
@@ -182,8 +179,9 @@ mod test {
                addr = "http://localhost:4502"
                user = "user1"
                pass = "pass1"
-            "#,
-        )?;
+
+            "#;
+        test_config.write_all(original_cfg_content)?;
         let expected_instance = Instance::new("author", "http://localhost:4502", "user1", "pass1");
 
         // when
@@ -192,6 +190,8 @@ mod test {
 
         // then
         assert_eq!(instance, expected_instance);
+        // config contains current version so it shouldn't be rewritten
+        assert_eq!(original_cfg_content, test_config.read_all()?);
         Ok(())
     }
 
@@ -200,8 +200,7 @@ mod test {
         let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
-        test_config.write_all(
-            r#"version = "0.3.0"
+        let original_cfg_content = r#"version = "0.3.0"
                ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
@@ -210,8 +209,8 @@ mod test {
                addr = "http://localhost:4502"
                user = "user1"
                pass = "pass1"
-            "#,
-        )?;
+            "#;
+        test_config.write_all(original_cfg_content)?;
         let default_instance = Instance::new("author", "http://localhost:4502", "admin", "admin");
 
         // when
@@ -220,6 +219,8 @@ mod test {
 
         // then
         assert_eq!(instance, default_instance);
+        // config contains current version so it shouldn't be rewritten
+        assert_eq!(original_cfg_content, test_config.read_all()?);
         Ok(())
     }
 
@@ -228,8 +229,7 @@ mod test {
         let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
-        test_config.write_all(
-            r#"version = "0.3.0"
+        let original_cfg_content = r#"version = "0.3.0"
                ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
@@ -245,8 +245,8 @@ mod test {
                user = "user1"
                pass = "pass1"
 
-            "#,
-        )?;
+            "#;
+        test_config.write_all(original_cfg_content)?;
         let first_instance = Instance::new("publish", "http://localhost:4503", "user2", "pass2");
 
         // when
@@ -255,6 +255,8 @@ mod test {
 
         // then
         assert_eq!(instance, first_instance);
+        // config contains current version so it shouldn't be rewritten
+        assert_eq!(original_cfg_content, test_config.read_all()?);
         Ok(())
     }
 
@@ -263,8 +265,7 @@ mod test {
         let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
-        test_config.write_all(
-            r#"version = "0.3.0"
+        let original_cfg_content = r#"version = "0.3.0"
                ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
@@ -277,8 +278,8 @@ mod test {
                [[bundle]]
                name = "simple"
                paths = ["file1", "file2"]
-            "#,
-        )?;
+            "#;
+        test_config.write_all(original_cfg_content)?;
         let expected_bundle = Bundle::new("simple", vec!["file1", "file2"]);
 
         // when
@@ -287,8 +288,10 @@ mod test {
         let cfg = handle_cfg_load()?;
         let bundle = cfg.bundle(Some("simple"));
 
-        // // then
+        // then
         assert_eq!(expected_bundle, bundle);
+        // config contains current version so it shouldn't be rewritten
+        assert_eq!(original_cfg_content, test_config.read_all()?);
         Ok(())
     }
 
@@ -297,8 +300,7 @@ mod test {
         let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
-        test_config.write_all(
-            r#"version = "0.3.0"
+        let original_cfg_content = r#"version = "0.3.0"
                ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
@@ -315,8 +317,8 @@ mod test {
                [[bundle]]
                name = "other"
                paths = ["file3", "file4"]
-            "#,
-        )?;
+            "#;
+        test_config.write_all(original_cfg_content)?;
         let expected_simple_bundle = Bundle::new("simple", vec!["file1", "file2"]);
         let expected_other_bundle = Bundle::new("other", vec!["file3", "file4"]);
 
@@ -328,6 +330,8 @@ mod test {
         // then
         assert_eq!(expected_simple_bundle, simple_bundle);
         assert_eq!(expected_other_bundle, other_bundle);
+        // config contains current version so it shouldn't be rewritten
+        assert_eq!(original_cfg_content, test_config.read_all()?);
         Ok(())
     }
 
@@ -336,8 +340,7 @@ mod test {
         let _ = pretty_env_logger::try_init();
         // given
         let test_config = TestConfig::new()?;
-        test_config.write_all(
-            r#"version = "0.3.0"
+        let original_cfg_content = r#"version = "0.3.0"
                ignore_properties = [{type = "contains", value = "prop1"},
                                     {type = "contains", value = "prop2"}]
 
@@ -346,8 +349,8 @@ mod test {
                addr = "http://localhost:4502"
                user = "user1"
                pass = "pass1"
-            "#,
-        )?;
+            "#;
+        test_config.write_all(original_cfg_content)?;
         let expected_bundle = Bundle::default();
 
         // when
@@ -356,6 +359,8 @@ mod test {
 
         // then
         assert_eq!(expected_bundle, bundle);
+        // config contains current version so it shouldn't be rewritten
+        assert_eq!(original_cfg_content, test_config.read_all()?);
         Ok(())
     }
 
@@ -405,6 +410,11 @@ mod test {
             let mut cfg_file = File::create(".je")?;
             cfg_file.write_all(content.into().as_bytes())?;
             Ok(())
+        }
+
+        fn read_all(&self) -> Result<String> {
+            env::set_current_dir(self.tmp_dir.path())?;
+            Ok(read_to_string(".je")?)
         }
     }
 

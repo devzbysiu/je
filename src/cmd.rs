@@ -55,7 +55,7 @@ impl Default for Opt {
     }
 }
 
-#[derive(Debug, StructOpt, Clone)]
+#[derive(Debug, PartialEq, Eq, StructOpt, Clone)]
 pub(crate) enum Cmd {
     /// Downloads content to local file system
     Get {
@@ -74,6 +74,8 @@ pub(crate) enum Cmd {
     },
     /// Initializes configuration file
     Init,
+    /// Rewrites the configuration file with newest version
+    Reinit,
 }
 
 pub(crate) fn init(cfg: &Cfg) -> Result<()> {
