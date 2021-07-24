@@ -21,14 +21,14 @@ command = "cargo"
 args = ["build", "--release"]
 
 [tasks.coverage]
-clear = true
+clear = false
 command = "cargo"
-args = ["tarpaulin", "--ignore-tests", "-v", "--out", "Xml"]
+args = ["tarpaulin",  "--skip-clean", "--ignore-tests", "-v", "--out", "Xml"]
 
 [tasks.coverage-report]
-clear = true
+clear = false
 command = "cargo"
-args = ["tarpaulin", "--ignore-tests", "-v", "--out", "Html"]
+args = ["tarpaulin", "--skip-clean", "--ignore-tests", "-v", "--out", "Html"]
 
 [tasks.all]
 dependencies = [
