@@ -238,7 +238,7 @@ mod test {
 #                                         #
 ###########################################"#;
         // when
-        let _ = handle(&opt, &mut writer);
+        let _res = handle(&opt, &mut writer);
 
         // then
         assert_eq!(String::from_utf8_lossy(&writer), expected_output);
@@ -267,7 +267,7 @@ mod test {
         )?;
 
         // when
-        let _ = handle(&opt, &mut writer);
+        let _res = handle(&opt, &mut writer);
 
         // then
         assert_eq!(String::from_utf8_lossy(&writer), String::new());
@@ -297,7 +297,7 @@ mod test {
         )?;
 
         // when
-        let _ = handle(&opt, &mut writer);
+        let _res = handle(&opt, &mut writer);
 
         // then
         assert_eq!(String::from_utf8_lossy(&writer), String::new());

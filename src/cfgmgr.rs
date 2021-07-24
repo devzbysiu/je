@@ -30,7 +30,7 @@ pub(crate) fn handle_cfg_load() -> Result<Cfg> {
         let version: Version = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
         if version.value.is_none() {
             let cfg: Pre030Cfg = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
-            convert_to_current_cfg(cfg)
+            Ok(convert_to_current_cfg(cfg))
         } else {
             // new configuration
             Ok(toml::from_str::<Cfg>(&read_to_string(CONFIG_FILE)?)?)
@@ -41,7 +41,7 @@ pub(crate) fn handle_cfg_load() -> Result<Cfg> {
     }
 }
 
-fn convert_to_current_cfg(cfg: Pre030Cfg) -> Result<Cfg> {
+fn convert_to_current_cfg(cfg: Pre030Cfg) -> Cfg {
     info!("adjusting configuration to a newer version");
     let res = Cfg {
         version: Some(CURRENT_VERSION.to_string()),
@@ -50,7 +50,7 @@ fn convert_to_current_cfg(cfg: Pre030Cfg) -> Result<Cfg> {
         ..Cfg::default()
     };
     debug!("config after adjustments: {:#?}", res);
-    Ok(res)
+    res
 }
 
 fn adjust_ignore_props(props: Vec<String>) -> Vec<IgnoreProp> {
