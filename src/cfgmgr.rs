@@ -68,12 +68,8 @@ fn adjust_ignore_props(props: Vec<String>) -> Vec<IgnoreProp> {
 mod test {
     use super::*;
     use crate::cfg::{Bundle, IgnoreProp, Instance};
+    use crate::testutils::TestConfig;
     use anyhow::Result;
-    use std::env;
-    use std::fs::File;
-    use std::io::prelude::*;
-    use std::path::PathBuf;
-    use tempfile::TempDir;
 
     #[test]
     fn test_handle_cfg_load_when_config_not_exists() -> Result<()> {
@@ -390,38 +386,5 @@ mod test {
 
         // when
         let _not_important = handle_cfg_load().unwrap(); // should panic
-    }
-
-    struct TestConfig {
-        initial_dir: PathBuf,
-        tmp_dir: TempDir,
-    }
-
-    impl TestConfig {
-        fn new() -> Result<Self> {
-            Ok(TestConfig {
-                initial_dir: env::current_dir()?,
-                tmp_dir: TempDir::new()?,
-            })
-        }
-
-        fn write_all<S: Into<String>>(&self, content: S) -> Result<()> {
-            env::set_current_dir(self.tmp_dir.path())?;
-            let mut cfg_file = File::create(".je")?;
-            cfg_file.write_all(content.into().as_bytes())?;
-            Ok(())
-        }
-
-        fn read_all(&self) -> Result<String> {
-            env::set_current_dir(self.tmp_dir.path())?;
-            Ok(read_to_string(".je")?)
-        }
-    }
-
-    impl Drop for TestConfig {
-        fn drop(&mut self) {
-            env::set_current_dir(self.initial_dir.clone())
-                .expect("failed to change to an initial dir");
-        }
     }
 }

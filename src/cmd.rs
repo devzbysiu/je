@@ -1,6 +1,6 @@
 use crate::args::{GetArgs, GetBundleArgs, PutArgs};
 use crate::cfg::Cfg;
-use crate::cfgmgr::CONFIG_FILE;
+use crate::cfgmgr::{handle_cfg_load, Version, CONFIG_FILE};
 use crate::fsops;
 use crate::http::AemClient;
 use crate::path::Path;
@@ -11,9 +11,9 @@ use anyhow::Result;
 use fs_extra::{dir, dir::CopyOptions as DirOpts};
 use fs_extra::{file, file::CopyOptions as FileOpts};
 use log::{debug, info};
-use std::fs::{self, OpenOptions};
+use std::fs::{self, read_to_string, OpenOptions};
 use std::io::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path as OsPath, PathBuf};
 use std::thread;
 use std::time::Duration;
 use structopt::StructOpt;
@@ -76,6 +76,40 @@ pub(crate) enum Cmd {
     Init,
     /// Rewrites the configuration file with newest version
     Reinit,
+}
+
+pub(crate) fn handle(opt: &Opt, w: &mut impl Write) -> Result<()> {
+    match &opt.cmd {
+        Cmd::Init => init(&Cfg::default())?,
+        other => {
+            if OsPath::new(CONFIG_FILE).exists() && *other != Cmd::Reinit {
+                // if not Reinit, print warning message
+                let version: Version = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
+                if version.value.is_none() {
+                    // old, not versioned configuration
+                    write!(
+                        w,
+                        r#"###########################################
+#                                         #
+#    YOU ARE USING OLDER CONFIG FORMAT.   #
+#    USE je reinit TO REINIT CONFIG       #
+#                                         #
+###########################################"#
+                    )?;
+                }
+            }
+            let cfg = handle_cfg_load()?;
+            debug!("read config: {:#?}", cfg);
+            match other {
+                Cmd::Get { path } => get(&GetArgs::new(path, cfg, &opt))?,
+                Cmd::GetBundle { name } => get_bundle(&GetBundleArgs::new(name, cfg, &opt))?,
+                Cmd::Put { path } => put(&PutArgs::new(path, &cfg, &opt))?,
+                Cmd::Reinit => init(&cfg)?,
+                Cmd::Init => unreachable!("This code branch will never be executed"),
+            }
+        }
+    }
+    Ok(())
 }
 
 pub(crate) fn init(cfg: &Cfg) -> Result<()> {
@@ -167,11 +201,108 @@ fn dst_path(path: &Path, tmp_dir: &TempDir) -> PathBuf {
 
 #[cfg(test)]
 mod test {
+    use crate::testutils::TestConfig;
+
     use super::*;
     use anyhow::Result;
     use std::env;
     use std::fs::{create_dir_all, read_to_string, File};
     use tempfile::TempDir;
+
+    #[test]
+    fn test_handle_when_cfg_old_and_no_reinit_passed() -> Result<()> {
+        // given
+        let mut writer = Vec::new();
+        let opt = Opt {
+            cmd: Cmd::Get {
+                path: "/some/jcr_root/path".into(),
+            },
+            ..Opt::default()
+        };
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+
+            "#,
+        )?;
+        let expected_output = r#"###########################################
+#                                         #
+#    YOU ARE USING OLDER CONFIG FORMAT.   #
+#    USE je reinit TO REINIT CONFIG       #
+#                                         #
+###########################################"#;
+        // when
+        let _ = handle(&opt, &mut writer);
+
+        // then
+        assert_eq!(String::from_utf8_lossy(&writer), expected_output);
+        Ok(())
+    }
+
+    #[test]
+    fn test_handle_when_cfg_old_but_reinit_passed() -> Result<()> {
+        // given
+        let mut writer = Vec::new();
+        let opt = Opt {
+            cmd: Cmd::Reinit,
+            ..Opt::default()
+        };
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+
+            "#,
+        )?;
+
+        // when
+        let _ = handle(&opt, &mut writer);
+
+        // then
+        assert_eq!(String::from_utf8_lossy(&writer), String::new());
+        Ok(())
+    }
+
+    #[test]
+    fn test_handle_when_cfg_new() -> Result<()> {
+        // given
+        let mut writer = Vec::new();
+        let opt = Opt {
+            cmd: Cmd::Reinit,
+            ..Opt::default()
+        };
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"version = "0.3.0"
+               ignore_properties = []
+
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+
+            "#,
+        )?;
+
+        // when
+        let _ = handle(&opt, &mut writer);
+
+        // then
+        assert_eq!(String::from_utf8_lossy(&writer), String::new());
+        Ok(())
+    }
 
     #[test]
     fn test_init() -> Result<()> {
