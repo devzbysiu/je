@@ -150,7 +150,7 @@ configuration file to the new form. Details below.
   <summary>Details</summary>
   This section is the result of <a href=https://github.com/alexcrichton/toml-rs/issues/265>this issue</a>.
 
-  `je` will change:
+  `je reinit` will change:
   ```toml
   ignore_properties = ["jcr:created", "jcr:createdBy"]
 
