@@ -62,6 +62,7 @@ SUBCOMMANDS:
     help          Prints this message or the help of the given subcommand(s)
     init          Initializes configuration file
     put           Uploads content to AEM instance
+    reinit        Rewrites the configuration file with newest version
 ```
 
 # <p id="installation">Installation</p>
