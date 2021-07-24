@@ -8,7 +8,7 @@ use reqwest::blocking::{Client as HttpClient, Response as Resp};
 use std::path::Path;
 
 // the `Option<Resp>` here is not-so-elegant solution for mocking
-// the response int the mock client implementations
+// the response in the mock client implementations
 #[derive(Debug)]
 pub(crate) struct Response(pub(crate) Option<Resp>);
 
@@ -82,5 +82,26 @@ impl Client for AemClient<'_> {
                 .multipart(form)
                 .send()?,
         )))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use base64::decode;
+
+    #[test]
+    fn test_encoced_creds() {
+        // given
+        let instance = Instance::new("NOT IMPORTANT", "NOT IMPORTANT", "user-name", "password");
+
+        // when
+        let res = encoded_creds(&&instance);
+
+        // then
+        assert_eq!(
+            String::from_utf8(decode(res).unwrap()).unwrap(),
+            "user-name:password"
+        );
     }
 }

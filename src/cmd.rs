@@ -1,5 +1,6 @@
 use crate::args::{GetArgs, GetBundleArgs, PutArgs};
 use crate::cfg::Cfg;
+use crate::cfgmgr::{handle_cfg_load, Version, CONFIG_FILE};
 use crate::fsops;
 use crate::http::AemClient;
 use crate::path::Path;
@@ -10,9 +11,9 @@ use anyhow::Result;
 use fs_extra::{dir, dir::CopyOptions as DirOpts};
 use fs_extra::{file, file::CopyOptions as FileOpts};
 use log::{debug, info};
-use std::fs::{self, OpenOptions};
+use std::fs::{self, read_to_string, OpenOptions};
 use std::io::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path as OsPath, PathBuf};
 use std::thread;
 use std::time::Duration;
 use structopt::StructOpt;
@@ -54,7 +55,7 @@ impl Default for Opt {
     }
 }
 
-#[derive(Debug, StructOpt, Clone)]
+#[derive(Debug, PartialEq, Eq, StructOpt, Clone)]
 pub(crate) enum Cmd {
     /// Downloads content to local file system
     Get {
@@ -73,15 +74,51 @@ pub(crate) enum Cmd {
     },
     /// Initializes configuration file
     Init,
+    /// Rewrites the configuration file with newest version
+    Reinit,
+}
+
+pub(crate) fn handle(opt: &Opt, w: &mut impl Write) -> Result<()> {
+    match &opt.cmd {
+        Cmd::Init => init(&Cfg::default())?,
+        other => {
+            if OsPath::new(CONFIG_FILE).exists() && *other != Cmd::Reinit {
+                // if not Reinit, print warning message
+                let version: Version = toml::from_str(&read_to_string(CONFIG_FILE)?)?;
+                if version.value.is_none() {
+                    // old, not versioned configuration
+                    write!(
+                        w,
+                        r#"###########################################
+#                                         #
+#    YOU ARE USING OLDER CONFIG FORMAT.   #
+#    USE je reinit TO REINIT CONFIG       #
+#                                         #
+###########################################"#
+                    )?;
+                }
+            }
+            let cfg = handle_cfg_load()?;
+            debug!("read config: {:#?}", cfg);
+            match other {
+                Cmd::Get { path } => get(&GetArgs::new(path, cfg, &opt))?,
+                Cmd::GetBundle { name } => get_bundle(&GetBundleArgs::new(name, cfg, &opt))?,
+                Cmd::Put { path } => put(&PutArgs::new(path, &cfg, &opt))?,
+                Cmd::Reinit => init(&cfg)?,
+                Cmd::Init => unreachable!("This code branch will never be executed"),
+            }
+        }
+    }
+    Ok(())
 }
 
 pub(crate) fn init(cfg: &Cfg) -> Result<()> {
-    info!("initializing config file ./.je");
+    info!("initializing config file ./{}", CONFIG_FILE);
     let mut config_file = OpenOptions::new()
         .write(true)
         .truncate(true)
         .create(true)
-        .open(".je")?;
+        .open(CONFIG_FILE)?;
     config_file.write_all(toml::to_string(&cfg)?.as_bytes())?;
     Ok(())
 }

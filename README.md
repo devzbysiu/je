@@ -62,6 +62,7 @@ SUBCOMMANDS:
     help          Prints this message or the help of the given subcommand(s)
     init          Initializes configuration file
     put           Uploads content to AEM instance
+    reinit        Rewrites the configuration file with newest version
 ```
 
 # <p id="installation">Installation</p>
@@ -143,6 +144,43 @@ downloading the content; currently, two types of ignoring mechanisms are availab
   - `name` - name of the bundle, it can be later used with `--bundle` option to specify which
     file pack to synchronize
   - `paths` - which file paths are part of the bundle
+
+> :warning: If you used pre 0.3.0 version of `je`, then the new version will try to transform the
+configuration file to the new form. Details below.
+<details>
+  <summary>Details</summary>
+  This section is the result of <a href=https://github.com/alexcrichton/toml-rs/issues/265>this issue</a>.
+
+  `je reinit` will change:
+  ```toml
+  ignore_properties = ["jcr:created", "jcr:createdBy"]
+
+  # (...)
+  ```
+  to
+  ```toml
+  version = "0.3.0"
+  
+  [[ignore_properties]]
+  type = "contains"
+  value = "jcr:created"
+
+  [[ignore_properties]]
+  type = "contains"
+  value = "jcr:createdBy"
+
+  # (...)
+  ```
+  which is equivalent to:
+  ```toml
+  ignore_properties = [{type = "contains", value = "jcr:created"},
+                       {type = "contains", value = "jcr:createdBy"}]
+
+  # (...)
+  ```
+
+  You can use any of those two formats.
+</details>
 
 ### IntelliJ Setup
 
