@@ -20,11 +20,13 @@ args = ["clippy", "--all-targets", "--all-features", "--", "-W", "clippy::pedant
 command = "cargo"
 args = ["build", "--release"]
 
-[tasks.coverage-tarpaulin.linux]
-args = ["--ignore-tests", "-v", "--out", "Xml"]
+[tasks.coverage]
+clear = true
+command = "cargo"
+args = ["tarpaulin", "--ignore-tests", "-v", "--out", "Xml"]
 
 [tasks.coverage-report]
-clear = false
+clear = true
 command = "cargo"
 args = ["tarpaulin", "--ignore-tests", "-v", "--out", "Html"]
 
