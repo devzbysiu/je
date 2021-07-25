@@ -159,7 +159,7 @@ new form. Details below.
   to
   ```toml
   version = "0.3.0"
-  
+
   [[ignore_properties]]
   type = "contains"
   value = "jcr:created"
@@ -172,6 +172,8 @@ new form. Details below.
   ```
   which is equivalent to:
   ```toml
+  version = "0.3.0"
+
   ignore_properties = [{type = "contains", value = "jcr:created"},
                        {type = "contains", value = "jcr:createdBy"}]
 
