@@ -213,6 +213,13 @@ Similarly add and configure `je put` command:
   - set to `$ProjectFileDir$` allows running `je` from the project root
   - keep in mind that `je` will try to read config file from the set working directory
 
+#### Configure key bindings:
+1. Go to `Settings -> Keymap -> External Tools`.
+2. Find the commands added previously.
+3. Set keyboard mapping by `Right Click -> Add Keyboard Shortcut`
+
+![key mappings](./res/key-mappings.png)
+
 # <p id="license">License</p>
 
 This project is licensed under either of
