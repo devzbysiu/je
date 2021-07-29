@@ -96,7 +96,7 @@ mod test {
         let instance = Instance::new("NOT IMPORTANT", "NOT IMPORTANT", "user-name", "password");
 
         // when
-        let res = encoded_creds(&&instance);
+        let res = encoded_creds(&instance);
 
         // then
         assert_eq!(

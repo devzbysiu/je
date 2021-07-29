@@ -64,7 +64,7 @@ fn vault_path(tmp_dir: &TempDir) -> PathBuf {
 }
 
 fn write_filter_content(tmp_dir: &TempDir, content_paths: &[String]) -> Result<()> {
-    let filter_path = format!("{}/filter.xml", vault_path(&tmp_dir).display());
+    let filter_path = format!("{}/filter.xml", vault_path(tmp_dir).display());
     let mut filter_file = File::create(&filter_path)?;
     let filter_content = filter_content(content_paths);
     debug!(
@@ -121,9 +121,9 @@ fn create_filter<S: Into<String>>(path: S) -> String {
 }
 
 fn write_properties_content(tmp_dir: &TempDir, pkg: &Pkg) -> Result<()> {
-    let prop_path = format!("{}/properties.xml", vault_path(&tmp_dir).display());
+    let prop_path = format!("{}/properties.xml", vault_path(tmp_dir).display());
     let mut prop_file = File::create(&prop_path)?;
-    let properties_content = properties_content(&pkg);
+    let properties_content = properties_content(pkg);
     debug!(
         "writing content\n{}\nto properties file {}",
         &properties_content, prop_path

@@ -101,9 +101,9 @@ pub(crate) fn handle(opt: &Opt, w: &mut impl Write) -> Result<()> {
             let cfg = handle_cfg_load()?;
             debug!("read config: {:#?}", cfg);
             match other {
-                Cmd::Get { path } => get(&GetArgs::new(path, cfg, &opt))?,
-                Cmd::GetBundle { name } => get_bundle(&GetBundleArgs::new(name, cfg, &opt))?,
-                Cmd::Put { path } => put(&PutArgs::new(path, &cfg, &opt))?,
+                Cmd::Get { path } => get(&GetArgs::new(path, cfg, opt))?,
+                Cmd::GetBundle { name } => get_bundle(&GetBundleArgs::new(name, cfg, opt))?,
+                Cmd::Put { path } => put(&PutArgs::new(path, &cfg, opt))?,
                 Cmd::Reinit => init(&cfg)?,
                 Cmd::Init => unreachable!("This code branch will never be executed"),
             }
