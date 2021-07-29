@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - 2021-11-07
+## [0.3.0] - 2021-29-07
 ### Added
 - Mechanism for adjusting the old configuration file to the new version via `je reinit`
 - Support for bundles (packs of files)
