@@ -145,13 +145,12 @@ downloading the content; currently, two types of ignoring mechanisms are availab
     file pack to synchronize
   - `paths` - which file paths are part of the bundle
 
-> :warning: If you used pre 0.3.0 version of `je`, then the new version will try to transform the
-configuration file to the new form. Details below.
+> :warning: If you used older version of `je`, then you can transform the configuration file to the
+new form. Details below.
 <details>
   <summary>Details</summary>
-  This section is the result of <a href=https://github.com/alexcrichton/toml-rs/issues/265>this issue</a>.
-
   `je reinit` will change:
+  
   ```toml
   ignore_properties = ["jcr:created", "jcr:createdBy"]
 
@@ -160,7 +159,7 @@ configuration file to the new form. Details below.
   to
   ```toml
   version = "0.3.0"
-  
+
   [[ignore_properties]]
   type = "contains"
   value = "jcr:created"
@@ -173,13 +172,16 @@ configuration file to the new form. Details below.
   ```
   which is equivalent to:
   ```toml
+  version = "0.3.0"
+
   ignore_properties = [{type = "contains", value = "jcr:created"},
                        {type = "contains", value = "jcr:createdBy"}]
 
   # (...)
   ```
 
-  You can use any of those two formats.
+  You can use any of those two formats. The difference is the result of <a href=https://github.com/alexcrichton/toml-rs/issues/265>this issue</a>.
+
 </details>
 
 ### IntelliJ Setup
@@ -210,6 +212,13 @@ Similarly add and configure `je put` command:
 - `Working directory` input:
   - set to `$ProjectFileDir$` allows running `je` from the project root
   - keep in mind that `je` will try to read config file from the set working directory
+
+#### Configure key bindings:
+1. Go to `Settings -> Keymap -> External Tools`.
+2. Find the commands added previously.
+3. Set keyboard mapping by `Right Click -> Add Keyboard Shortcut`
+
+![key mappings](./res/key-mappings.png)
 
 # <p id="license">License</p>
 

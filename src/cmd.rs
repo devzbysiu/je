@@ -101,9 +101,9 @@ pub(crate) fn handle(opt: &Opt, w: &mut impl Write) -> Result<()> {
             let cfg = handle_cfg_load()?;
             debug!("read config: {:#?}", cfg);
             match other {
-                Cmd::Get { path } => get(&GetArgs::new(path, cfg, &opt))?,
-                Cmd::GetBundle { name } => get_bundle(&GetBundleArgs::new(name, cfg, &opt))?,
-                Cmd::Put { path } => put(&PutArgs::new(path, &cfg, &opt))?,
+                Cmd::Get { path } => get(&GetArgs::new(path, cfg, opt))?,
+                Cmd::GetBundle { name } => get_bundle(&GetBundleArgs::new(name, cfg, opt))?,
+                Cmd::Put { path } => put(&PutArgs::new(path, &cfg, opt))?,
                 Cmd::Reinit => init(&cfg)?,
                 Cmd::Init => unreachable!("This code branch will never be executed"),
             }
@@ -202,10 +202,106 @@ fn dst_path(path: &Path, tmp_dir: &TempDir) -> PathBuf {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::testutils::TestConfig;
     use anyhow::Result;
     use std::env;
     use std::fs::{create_dir_all, read_to_string, File};
     use tempfile::TempDir;
+
+    #[test]
+    fn test_handle_when_cfg_old_and_no_reinit_passed() -> Result<()> {
+        // given
+        let mut writer = Vec::new();
+        let opt = Opt {
+            cmd: Cmd::Get {
+                path: "/some/jcr_root/path".into(),
+            },
+            ..Opt::default()
+        };
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+
+            "#,
+        )?;
+        let expected_output = r#"###########################################
+#                                         #
+#    YOU ARE USING OLDER CONFIG FORMAT.   #
+#    USE je reinit TO REINIT CONFIG       #
+#                                         #
+###########################################"#;
+        // when
+        let _res = handle(&opt, &mut writer);
+
+        // then
+        assert_eq!(String::from_utf8_lossy(&writer), expected_output);
+        Ok(())
+    }
+
+    #[test]
+    fn test_handle_when_cfg_old_but_reinit_passed() -> Result<()> {
+        // given
+        let mut writer = Vec::new();
+        let opt = Opt {
+            cmd: Cmd::Reinit,
+            ..Opt::default()
+        };
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"ignore_properties = ["prop1", "prop2"]
+
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+
+            "#,
+        )?;
+
+        // when
+        let _res = handle(&opt, &mut writer);
+
+        // then
+        assert_eq!(String::from_utf8_lossy(&writer), String::new());
+        Ok(())
+    }
+
+    #[test]
+    fn test_handle_when_cfg_new() -> Result<()> {
+        // given
+        let mut writer = Vec::new();
+        let opt = Opt {
+            cmd: Cmd::Reinit,
+            ..Opt::default()
+        };
+        let test_config = TestConfig::new()?;
+        test_config.write_all(
+            r#"version = "0.3.0"
+               ignore_properties = []
+
+               [[profile]]
+               name = "author"
+               addr = "http://localhost:4502"
+               user = "user1"
+               pass = "pass1"
+
+            "#,
+        )?;
+
+        // when
+        let _res = handle(&opt, &mut writer);
+
+        // then
+        assert_eq!(String::from_utf8_lossy(&writer), String::new());
+        Ok(())
+    }
 
     #[test]
     fn test_init() -> Result<()> {

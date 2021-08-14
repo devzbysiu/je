@@ -1,6 +1,6 @@
 use crate::cmd::Opt;
 use anyhow::Result;
-use log::{debug, info};
+use log::{debug, info, warn};
 use std::env;
 use structopt::StructOpt;
 
@@ -32,15 +32,20 @@ fn main() -> Result<()> {
 
 fn setup_log_level_for_logger(opt: &Opt) {
     match opt.verbose {
+        0 => {}
         1 => {
-            env::set_var("RUST_LOG", "je=info");
             info!("setting INFO log level");
+            env::set_var("RUST_LOG", "je=info");
         }
         2 => {
-            env::set_var("RUST_LOG", "je=debug");
             info!("setting DEBUG log level");
+            env::set_var("RUST_LOG", "je=debug");
         }
-        _ => {}
+        _ => {
+            warn!("maximum supported log level is DEBUG");
+            info!("setting DEBUG log level");
+            env::set_var("RUST_LOG", "je=debug");
+        }
     }
 }
 
@@ -94,5 +99,21 @@ mod test {
 
         // then
         assert_eq!(std::env::var("RUST_LOG").unwrap(), "");
+    }
+
+    #[test]
+    fn test_setup_logger_with_too_big_verbose_level() {
+        // given
+        let opt = Opt {
+            verbose: 100,
+            ..Opt::default()
+        };
+        env::set_var("RUST_LOG", "");
+
+        // when
+        setup_log_level_for_logger(&opt);
+
+        // then
+        assert_eq!(std::env::var("RUST_LOG").unwrap(), "je=debug");
     }
 }
