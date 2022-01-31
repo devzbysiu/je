@@ -2,7 +2,7 @@
 name = "je"
 version = "0.3.0"
 authors = ["Bartosz Zbytniewski <bartosz.zbytniewski.dev@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Allows to upload and download content to and from AEM instance"
 repository = "https://github.com/devzbysiu/je"
 license = "MIT/Apache-2.0"
