@@ -35,7 +35,7 @@ path-slash = "0.1.4"
 assert_cmd = "2.0.4"
 rocket = { git = "https://github.com/SergioBenitez/Rocket" }
 tokio = "1.6.0"
-setup_fs = { path = "/home/zbychu/projects/setup_fs" }
+setup_fs = { git = "https://github.com/devzbysiu/setup_fs", rev = "036b2c8" }
 maplit = "1.0.2"
 
 [profile.release]

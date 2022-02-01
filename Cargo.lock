@@ -1549,6 +1549,7 @@ dependencies = [
 [[package]]
 name = "setup_fs"
 version = "0.1.0"
+source = "git+https://github.com/devzbysiu/setup_fs?rev=036b2c8#036b2c8ef7ea36dc98e3c7448838c45a008f7402"
 dependencies = [
  "doc-comment",
  "thiserror",
