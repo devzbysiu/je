@@ -3,7 +3,7 @@
   <h1><code>je</code></h1>
 
   <h3>
-    <strong>Jcr Exchange</strong>
+    <strong>Jcr Exchange - uploading/downloading content to/from running AEM instance</strong>
   </h3>
 
   <p>
