@@ -113,7 +113,7 @@ fn normalize<S: Into<String>>(path: S) -> String {
         .replace(".content.xml", "")
         .replace(".xml", "")
         // windows
-        .replace("\\", "/")
+        .replace('\\', "/")
 }
 
 fn create_filter<S: Into<String>>(path: S) -> String {
