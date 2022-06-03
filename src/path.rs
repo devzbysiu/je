@@ -19,7 +19,7 @@ impl Path {
         self.0.clone()
     }
 
-    pub(crate) fn from_root(&self) -> String {
+    pub(crate) fn after_root(&self) -> String {
         let path = &self.0;
         let parts: Vec<&str> = path.split("jcr_root").collect();
         assert_eq!(parts.len(), 2);
@@ -89,7 +89,7 @@ mod test {
         let path = Path::new("/home/zbychu/project/test/jcr_root/content/abc");
 
         // when
-        let path = path.from_root();
+        let path = path.after_root();
 
         // then
         assert_eq!(path, "jcr_root/content/abc");
@@ -102,7 +102,7 @@ mod test {
         let path = Path::new("/home/zbychu/project/test");
 
         // should panic
-        path.from_root();
+        path.after_root();
     }
 
     #[test]

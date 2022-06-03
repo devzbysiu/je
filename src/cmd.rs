@@ -194,7 +194,7 @@ fn dst_path(path: &Path, tmp_dir: &TempDir) -> PathBuf {
     let result = if path.is_dir() {
         tmp_dir.path().join(path.parent_from_root())
     } else {
-        tmp_dir.path().join(path.from_root())
+        tmp_dir.path().join(path.after_root())
     };
     result
 }

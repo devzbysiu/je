@@ -155,7 +155,7 @@ pub(crate) fn mv_bundle_back(tmp_dir: &TempDir, bundle: &Bundle) -> Result<()> {
 }
 
 pub(crate) fn mv_files_back(tmp_dir: &TempDir, target: &Path) -> Result<()> {
-    let source = tmp_dir.path().join(target.from_root());
+    let source = tmp_dir.path().join(target.after_root());
     info!(
         "moving files from {} to {}",
         source.display(),
