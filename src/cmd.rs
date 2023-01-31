@@ -50,7 +50,9 @@ impl Default for Opt {
             verbose: 0,
             debug: false,
             profile: None,
-            cmd: Cmd::Get { path: "".into() },
+            cmd: Cmd::Get {
+                path: String::new(),
+            },
         }
     }
 }
@@ -366,7 +368,7 @@ pass = "admin"
         // given
         let homepath = "/tmp/je-test/jcr_root/content/project/en_gb/home";
         create_dir_all(homepath)?;
-        let filepath = format!("{}/.content.xml", homepath);
+        let filepath = format!("{homepath}/.content.xml");
         File::create(&filepath)?;
 
         let tmp_dir = TempDir::new()?;

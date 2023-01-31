@@ -50,7 +50,7 @@ impl Client for AemClient<'_> {
         let client = HttpClient::new();
         Ok(Response(Some(
             client
-                .get(&path)
+                .get(path)
                 .header("Authorization", format!("Basic {}", encoded_creds(ins)))
                 .send()?,
         )))
@@ -62,7 +62,7 @@ impl Client for AemClient<'_> {
         let client = HttpClient::new();
         Ok(Response(Some(
             client
-                .post(&path)
+                .post(path)
                 .header("Authorization", format!("Basic {}", encoded_creds(ins)))
                 .send()?,
         )))
@@ -77,7 +77,7 @@ impl Client for AemClient<'_> {
             .expect("failed to create multipart form");
         Ok(Response(Some(
             client
-                .post(&path)
+                .post(path)
                 .header("Authorization", format!("Basic {}", encoded_creds(ins)))
                 .multipart(form)
                 .send()?,

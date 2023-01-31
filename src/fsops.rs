@@ -141,7 +141,7 @@ fn allowed_prop<S: Into<String>>(line: S, ignore_properties: &[IgnoreProp]) -> O
         }
     }
     if result {
-        Some(format!("{}\n", line))
+        Some(format!("{line}\n"))
     } else {
         None
     }

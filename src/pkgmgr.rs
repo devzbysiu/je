@@ -16,7 +16,7 @@ pub(crate) fn upload_pkg(client: &impl Client, dir: &TempDir) -> Result<()> {
 }
 
 pub(crate) fn build_pkg(client: &impl Client, pkg: &pkgdir::Pkg) -> Result<()> {
-    let resp = client.post(&format!(
+    let resp = client.post(format!(
         "/crx/packmgr/service/.json/etc/packages/{}?cmd=build",
         pkg.path(),
     ))?;
@@ -26,7 +26,7 @@ pub(crate) fn build_pkg(client: &impl Client, pkg: &pkgdir::Pkg) -> Result<()> {
 
 pub(crate) fn download_pkg(client: &impl Client, dir: &TempDir, pkg: &pkgdir::Pkg) -> Result<()> {
     info!("downloading pkg");
-    let resp = client.get(&format!("/etc/packages/{}", pkg.path(),))?;
+    let resp = client.get(format!("/etc/packages/{}", pkg.path(),))?;
     debug!("download pkg response: {:#?}", resp);
     let mut pkg_file = File::create(dir.path().join("res.zip"))?;
     pkg_file.write_all(&resp.bytes()?)?;
@@ -34,7 +34,7 @@ pub(crate) fn download_pkg(client: &impl Client, dir: &TempDir, pkg: &pkgdir::Pk
 }
 
 pub(crate) fn install_pkg(client: &impl Client, pkg: &pkgdir::Pkg) -> Result<()> {
-    let resp = client.post(&format!(
+    let resp = client.post(format!(
         "/crx/packmgr/service/.json/etc/packages/{}?cmd=install",
         pkg.path()
     ))?;
@@ -47,7 +47,7 @@ pub(crate) fn delete_pkg(client: &impl Client, debug: bool, pkg: &pkgdir::Pkg) -
         info!("package deletion omitted because of passed flag");
         return Ok(());
     }
-    let resp = client.post(&format!(
+    let resp = client.post(format!(
         "/crx/packmgr/service/.json/etc/packages/{}?cmd=delete",
         pkg.path()
     ))?;
@@ -80,7 +80,7 @@ mod test {
             spy.post_file_req(),
             (
                 "/crx/packmgr/service/.json?cmd=upload".into(),
-                to_string(&pkg_path)
+                to_string(pkg_path)
             )
         );
         Ok(())

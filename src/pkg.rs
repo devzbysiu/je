@@ -51,7 +51,7 @@ pub(crate) fn zip_pkg(tmp_dir: &TempDir) -> Result<()> {
                 zip.start_file(path.to_slash_lossy(), options)?;
                 let mut f = File::open(path)?;
                 f.read_to_end(&mut buffer)?;
-                zip.write_all(&*buffer)?;
+                zip.write_all(&buffer)?;
                 buffer.clear();
             } else {
                 debug!("{} is a dir", path.display());
@@ -85,7 +85,7 @@ pub(crate) fn unzip_pkg(tmp_dir: &TempDir) -> Result<()> {
             debug!("extracting file {}", outpath.display());
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
-                    create_dir_all(&p)?;
+                    create_dir_all(p)?;
                 }
             }
             let mut outfile = File::create(&outpath)?;
@@ -125,7 +125,7 @@ mod test {
 
         // then
         assert!(Path::new(&tmp_dir.rel_path("pkg.zip")).exists());
-        let archive_files = archive_files_list(&tmp_dir.rel_path("pkg.zip"))?;
+        let archive_files = archive_files_list(tmp_dir.rel_path("pkg.zip"))?;
 
         assert_eq!(
             archive_files,
@@ -218,7 +218,7 @@ mod test {
                     zip.start_file(path.display().to_string(), options)?;
                     let mut f = File::open(path)?;
                     f.read_to_end(&mut buffer)?;
-                    zip.write_all(&*buffer)?;
+                    zip.write_all(&buffer)?;
                     buffer.clear();
                 } else {
                     debug!("{} is a dir", path.display());

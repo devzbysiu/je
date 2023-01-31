@@ -39,7 +39,7 @@ impl Path {
         let parts: Vec<&str> = parent.split("jcr_root").collect();
         assert_eq!(parts.len(), 2);
         let path: String = parts[1].into();
-        format!("jcr_root{}", path)
+        format!("jcr_root{path}")
     }
 }
 

@@ -55,7 +55,7 @@ fn mk_jcr_root_dir(tmp_dir: &TempDir) -> Result<()> {
 
 fn mk_vault_dir(tmp_dir: &TempDir) -> Result<()> {
     debug!("creating vault dir: {}", vault_path(tmp_dir).display());
-    create_dir_all(&vault_path(tmp_dir))?;
+    create_dir_all(vault_path(tmp_dir))?;
     Ok(())
 }
 
@@ -191,8 +191,8 @@ mod test {
     fn test_path_with_incorrect_pkg() {
         // given
         let pkg = Pkg {
-            name: "".into(),
-            version: "".into(),
+            name: String::new(),
+            version: String::new(),
             group: "group-name".into(),
         };
 
@@ -233,7 +233,7 @@ mod test {
     fn test_write_filter_content() -> Result<()> {
         // given
         let tmp_dir = TempDir::new()?;
-        create_dir_all(&format!("{}/META-INF/vault", tmp_dir.path().display()))?;
+        create_dir_all(format!("{}/META-INF/vault", tmp_dir.path().display()))?;
 
         // when
         write_filter_content(&tmp_dir, &["/content/path".into()])?;
@@ -263,7 +263,7 @@ mod test {
     fn test_write_properties_content() -> Result<()> {
         // given
         let tmp_dir = TempDir::new()?;
-        create_dir_all(&format!("{}/META-INF/vault", tmp_dir.path().display()))?;
+        create_dir_all(format!("{}/META-INF/vault", tmp_dir.path().display()))?;
         let pkg = Pkg::default();
 
         // when
