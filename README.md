@@ -7,7 +7,7 @@
   </h3>
 
   <p>
-    <img src="https://img.shields.io/github/workflow/status/devzbysiu/je/ci?style=for-the-badge" alt="CI status badge" />
+    <img src="https://img.shields.io/github/actions/workflow/status/devzbysiu/je/ci.yml?style=for-the-badge" alt="CI status badge" />
     <a href="https://crates.io/crates/je">
       <img src="https://img.shields.io/crates/v/je?style=for-the-badge" alt="Crates.io version" />
     </a>
